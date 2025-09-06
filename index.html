@@ -28,7 +28,7 @@ body.light .machine{background:#eee;color:#222;}
 body.dark .slots{background:#1f1f1f;}
 body.light .slots{background:#ddd;}
 .slot-item{padding:0;border-radius:6px;width:64px;text-align:center;display:flex;flex-direction:column;align-items:center;transition:all 0.3s ease;opacity:0;transform:translateY(-10px);}
-.slot-item.show{opacity:1;transform:translateY(0);}
+.slot-item.show{opacity:1;transform:translateY(0);transition:all 0.1s ease;}
 body.dark .slot-item{background:#444;color:#eee;}
 body.light .slot-item{background:#bbb;color:#222;}
 .slot-item img{width:64px;height:64px;}
@@ -46,10 +46,10 @@ body.light .modal-content{background:#fff;color:#222;}
 .modal-content button{margin-top:12px;padding:12px 16px;border-radius:8px;border:none;background:#3a3a3a;color:#eee;cursor:pointer;transition:all 0.3s ease;font-size:14px;}
 body.light .modal-content button{background:#ddd;color:#222;}
 #toggle-inv{position:fixed;top:10px;left:10px;z-index:1000;display:none;}
-#mobile-inventory{position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.9);color:#fff;padding:10px;display:none;flex-wrap:wrap;gap:8px;z-index:999;justify-content:center;transition:all 0.3s ease;}
+#mobile-inventory{position:fixed;top:50px;left:0;right:0;background:rgba(0,0,0,0.95);color:#fff;padding:10px;display:none;flex-wrap:wrap;gap:8px;z-index:999;justify-content:center;transition:all 0.1s ease;}
 .controls{display:flex;gap:6px;margin-top:6px;}
 .controls .btn{flex:1;}
-#recipes-panel{position:fixed;top:50px;right:10px;width:250px;background:rgba(0,0,0,0.9);color:#fff;padding:10px;border-radius:10px;display:none;flex-direction:column;gap:6px;max-height:80vh;overflow:auto;z-index:1000;transition:all 0.3s ease;}
+#recipes-panel{position:fixed;top:50px;right:10px;width:350px;background:rgba(0,0,0,0.95);color:#fff;padding:10px;border-radius:10px;display:none;flex-direction:column;gap:6px;max-height:90vh;overflow:auto;z-index:1000;transition:all 0.3s ease;}
 #recipes-panel.show{display:flex;}
 #recipes-panel h3{text-align:center;margin:0 0 6px 0;}
 @media (max-width:768px){
@@ -62,7 +62,7 @@ body.light .modal-content button{background:#ddd;color:#222;}
 }
 @media (min-width:769px){
   #toggle-inv{display:none;}
-  #inventory{display:flex;}
+  #inventory{display:flex;width:100%;flex-wrap:wrap;}
   #mobile-inventory{display:none;}
 }
 </style>
@@ -86,7 +86,7 @@ body.light .modal-content button{background:#ddd;color:#222;}
   </div>
 </div>
 
-<main style="display:none;">
+<main style="display:none;width:100%;">
 <section class="panel">
 <h2>Инвентарь</h2>
 <div id="inventory"></div>
@@ -99,7 +99,6 @@ body.light .modal-content button{background:#ddd;color:#222;}
 </main>
 
 <script>
-// === Инициализация ===
 const BASE_ITEMS=["воздух","уголь","руда"];
 const MACHINES=["коксовая батарея","установка сухого тушения кокса","воздухоразделительная установка","валковый магнитный сепаратор","агломерационная машина","гранулятор","доменная печь","конвертер","машина непрерывного литья заготовок","стан горячей прокатки","стан холодной прокатки","трубогибочный стан"];
 const RECIPES=[
@@ -117,6 +116,7 @@ const RECIPES=[
 {components:["слябы"],machine:"стан горячей прокатки",result:"горячекатаный лист"},
 {components:["горячекатаный лист"],machine:"стан холодной прокатки",result:"холоднокатаный лист"},
 {components:["холоднокатаный лист"],machine:"трубогибочный стан",result:"труба"}];
+
 const IMAGE_MAP={
 "воздух":"icons/vozduh.png","уголь":"icons/ugol.png","руда":"icons/ruda.png",
 "раскаленный кокс":"icons/raskalennyi_koks.png","кокс":"icons/koks.png",
@@ -129,26 +129,32 @@ const IMAGE_MAP={
 let state={inventory:[],machines:{},discovered:{}};
 MACHINES.forEach(m=>state.machines[m]=[]);
 
-// === Основные функции ===
 function toggleTheme(){document.body.classList.toggle("dark");document.body.classList.toggle("light");}
 function toggleRecipes(){document.getElementById("recipes-panel").classList.toggle("show");}
-function startGame(){state.inventory=[...BASE_ITEMS]; document.getElementById("modal").style.display="none"; document.querySelector("main").style.display="grid"; render();}
+function startGame(){state.inventory=[...BASE_ITEMS]; document.getElementById("modal").style.display="none"; document.querySelector("main").style.display="grid"; renderMachines(); renderInventory();}
 
-// === Инвентарь ===
 function createItemElement(name,index){
-  const el=document.createElement("div"); el.className="item"; el.draggable=true; el.dataset.index=index; el.dataset.base=BASE_ITEMS.includes(name)?"1":"";
+  const el=document.createElement("div");
+  el.className="item"; el.draggable=true; el.dataset.index=index; el.dataset.base=BASE_ITEMS.includes(name)?"1":"";
   const img=document.createElement("img"); img.src=IMAGE_MAP[name]; img.alt=name;
   const span=document.createElement("span"); span.textContent=name;
   el.appendChild(img); el.appendChild(span);
-  setTimeout(()=>el.classList.add("show"),50);
-  el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/index",index); e.dataTransfer.setData("text/base",el.dataset.base?name:"");});
+  setTimeout(()=>el.classList.add("show"),20);
   let dragged=null;
-  el.addEventListener("touchstart",e=>{dragged=el;el.classList.add("dragging"); e.preventDefault();});
-  el.addEventListener("touchmove",e=>{if(!dragged)return; const t=e.touches[0]; dragged.style.position="absolute"; dragged.style.left=t.pageX-32+"px"; dragged.style.top=t.pageY-32+"px"; dragged.style.zIndex=1000;});
+  el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/index",index); e.dataTransfer.setData("text/base",el.dataset.base?name:"");});
+  el.addEventListener("touchstart",e=>{dragged=el; el.classList.add("dragging"); e.preventDefault();});
+  el.addEventListener("touchmove",e=>{
+    if(!dragged) return;
+    const t=e.touches[0];
+    dragged.style.position="absolute"; dragged.style.left=(t.pageX-28)+"px"; dragged.style.top=(t.pageY-28)+"px";
+    dragged.style.zIndex=1000; dragged.style.transition="transform 0.1s ease";
+  });
   el.addEventListener("touchend",e=>{
-    if(!dragged)return; dragged.style.position=""; dragged.style.left=""; dragged.style.top=""; dragged.style.zIndex="";
+    if(!dragged) return;
+    dragged.style.position=""; dragged.style.left=""; dragged.style.top=""; dragged.style.zIndex=""; dragged.style.transition="";
     document.querySelectorAll(".machine").forEach(machine=>{
-      const r=machine.getBoundingClientRect(); const t=e.changedTouches[0];
+      const r=machine.getBoundingClientRect();
+      const t=e.changedTouches[0];
       if(t.clientX>=r.left && t.clientX<=r.right && t.clientY>=r.top && t.clientY<=r.bottom){
         dropToMachine(name,index,machine.dataset.machine);
       }
@@ -158,114 +164,56 @@ function createItemElement(name,index){
   return el;
 }
 
-function dropToMachine(name,index,machine){
-  const slots=document.getElementById("slots-"+machine);
-  state.machines[machine].push(name);
-  if(!BASE_ITEMS.includes(name)) state.inventory.splice(index,1);
-  const el=document.createElement("div"); el.className="slot-item show";
-  const img=document.createElement("img"); img.src=IMAGE_MAP[name]; img.alt=name;
-  const span=document.createElement("span"); span.textContent=name;
-  el.appendChild(img); el.appendChild(span); slots.appendChild(el);
-  renderInventory(); renderMobileInventory();
-}
-
-function renderInventory(){const inv=document.getElementById("inventory"); inv.innerHTML=""; state.inventory.forEach((it,idx)=>inv.appendChild(createItemElement(it,idx)));}
+function renderInventory(){const inv=document.getElementById("inventory"); inv.innerHTML=""; state.inventory.forEach((it,idx)=>inv.appendChild(createItemElement(it,idx))); renderMobileInventory();}
 function renderMobileInventory(){const inv=document.getElementById("mobile-inventory"); inv.innerHTML=""; state.inventory.forEach((it,idx)=>inv.appendChild(createItemElement(it,idx)));}
-
-// === Машины и процесс ===
-function renderMachines(){
-  const container=document.getElementById("machines-container"); container.innerHTML="";
-  MACHINES.forEach(m=>{
-    const div=document.createElement("div"); div.className="machine"; div.dataset.machine=m;
-    div.innerHTML=`<div class="machine-title">${m}</div><div class="slots" id="slots-${m}"></div>
-    <div class="controls">
-      <div class="btn" onclick="processMachine('${m}')">Обработать</div>
-      <div class="btn" onclick="clearMachine('${m}')">Очистить</div>
-    </div>`;
-    container.appendChild(div);
-  });
-  for(const m of MACHINES){
-    const slots=document.getElementById("slots-"+m); slots.innerHTML="";
-    state.machines[m].forEach(it=>{
-      const el=document.createElement("div"); el.className="slot-item show";
-      const img=document.createElement("img"); img.src=IMAGE_MAP[it]; img.alt=it;
-      const span=document.createElement("span"); span.textContent=it;
-      el.appendChild(img); el.appendChild(span); slots.appendChild(el);
-    });
-  }
-  setupDropZones();
-}
-
-function setupDropZones(){
-  document.querySelectorAll(".machine").forEach(me=>{
-    me.ondragover=ev=>{ev.preventDefault(); me.classList.add("dragover");};
-    me.ondragleave=()=>me.classList.remove("dragover");
-    me.ondrop=ev=>{
-      ev.preventDefault(); me.classList.remove("dragover");
-      const base=ev.dataTransfer.getData("text/base"); const idx=ev.dataTransfer.getData("text/index");
-      const slots=document.getElementById("slots-"+me.dataset.machine);
-      if(base){state.machines[me.dataset.machine].push(base);
-        const el=document.createElement("div"); el.className="slot-item show";
-        const img=document.createElement("img"); img.src=IMAGE_MAP[base]; img.alt=base;
-        const span=document.createElement("span"); span.textContent=base;
-        el.appendChild(img); el.appendChild(span); slots.appendChild(el); return;}
-      if(idx!=="" && state.inventory[idx]){
-        const item=state.inventory[idx];
-        if(!BASE_ITEMS.includes(item)) state.inventory.splice(idx,1);
-        state.machines[me.dataset.machine].push(item);
-        const el=document.createElement("div"); el.className="slot-item show";
-        const img=document.createElement("img"); img.src=IMAGE_MAP[item]; img.alt=item;
-        const span=document.createElement("span"); span.textContent=item;
-        el.appendChild(img); el.appendChild(span); slots.appendChild(el); renderInventory(); renderMobileInventory();
-      }
-    };
-  });
-}
-
-// === Крафт и анимации ===
-function flashMachine(machine){const slots=document.getElementById("slots-"+machine); const flash=document.createElement("div"); flash.className="flash"; slots.appendChild(flash); setTimeout(()=>flash.remove(),500);}
-function confetti(){for(let i=0;i<50;i++){const c=document.createElement("div"); c.className="confetti-piece"; c.style.left=Math.random()*window.innerWidth+"px"; document.body.appendChild(c); setTimeout(()=>c.remove(),2000);}}
-function animateCraft(slots,result,machine,callback){flashMachine(machine); state.inventory.push(result); renderInventory(); renderMobileInventory(); setTimeout(callback,500);}
-
-function processMachine(machine){
-  const slotsElem=document.getElementById("slots-"+machine); const slots=state.machines[machine];
-  if(slots.length===0){alert("Нет компонентов"); return;}
-  let candidate=null;
-  for(const r of RECIPES){
-    if(r.machine!==machine) continue;
-    if(slots.length!==r.components.length) continue;
-    const need={}; r.components.forEach(c=>need[c]=(need[c]||0)+1);
-    const have={}; slots.forEach(s=>have[s]=(have[s]||0)+1);
-    let ok=true; for(const k in need){if(need[k]!==have[k]){ok=false; break;}} for(const k in have){if(need[k]!==have[k]){ok=false; break;}}
-    if(ok){candidate=r; break;}
-  }
-  if(candidate){
-    animateCraft(slotsElem,candidate.result,machine,()=>{
-      state.machines[machine]=[]; 
-      if(candidate.result==="труба"){confetti(); alert("Поздравляем! Вы создали трубу!");}
-      const text=candidate.components.join(" + ")+" + "+candidate.machine+" → "+candidate.result;
-      if(!state.discovered[text]) state.discovered[text]=true;
-      renderMachines(); renderRecipes();
-    });
-  } else {state.machines[machine]=[]; renderMachines(); alert("Неудача. Компоненты потеряны.");}
-}
-
-function clearMachine(machine){state.machines[machine]=[]; renderMachines();}
-
-function renderRecipes(){
-  const rdiv=document.getElementById("recipes-list"); rdiv.innerHTML="";
-  const keys=Object.keys(state.discovered);
-  if(keys.length===0){rdiv.textContent="Пока рецептов нет";}
-  else keys.forEach(k=>{const div=document.createElement("div"); div.textContent=k; rdiv.appendChild(div);});
-}
-
-function render(){renderInventory(); renderMobileInventory(); renderMachines(); renderRecipes();}
 
 document.getElementById("toggle-inv").addEventListener("click",()=>{
   const inv=document.getElementById("mobile-inventory");
   inv.style.display=inv.style.display==="flex"?"none":"flex";
   renderMobileInventory();
 });
+
+// ===== Render Machines =====
+function renderMachines(){
+  const container=document.getElementById("machines-container"); container.innerHTML="";
+  MACHINES.forEach(machine=>{
+    const div=document.createElement("div"); div.className="machine"; div.dataset.machine=machine;
+    const title=document.createElement("div"); title.className="machine-title"; title.textContent=machine;
+    const slots=document.createElement("div"); slots.className="slots"; div.appendChild(title); div.appendChild(slots);
+    container.appendChild(div);
+    div.addEventListener("dragover",e=>{e.preventDefault(); div.classList.add("dragover");});
+    div.addEventListener("dragleave",e=>{div.classList.remove("dragover");});
+    div.addEventListener("drop",e=>{div.classList.remove("dragover"); const index=e.dataTransfer.getData("text/index"); const name=state.inventory[index]; dropToMachine(name,index,machine);});
+  });
+}
+
+// ===== Drop & Craft =====
+function dropToMachine(name,index,machine){
+  const recipe=RECIPES.find(r=>r.machine===machine && r.components.every(c=>state.inventory.includes(c)));
+  if(recipe){
+    recipe.components.forEach(c=>{if(!BASE_ITEMS.includes(c)) state.inventory.splice(state.inventory.indexOf(c),1);});
+    state.inventory.push(recipe.result); state.discovered[recipe.result]=true;
+    showConfetti(); renderInventory(); updateRecipes();
+  } else {
+    if(!BASE_ITEMS.includes(name)) state.inventory.splice(index,1); // удаляем только если не базовый
+    renderInventory();
+  }
+}
+
+function updateRecipes(){
+  const panel=document.getElementById("recipes-list"); panel.innerHTML="";
+  Object.keys(state.discovered).forEach(name=>{const div=document.createElement("div"); div.textContent=name; panel.appendChild(div);});
+}
+
+function showConfetti(){
+  if(state.inventory.includes("труба")){
+    for(let i=0;i<100;i++){
+      const c=document.createElement("div"); c.className="confetti-piece";
+      c.style.left=Math.random()*window.innerWidth+"px"; c.style.background=["gold","red","blue","green"][Math.floor(Math.random()*4)];
+      document.body.appendChild(c); setTimeout(()=>c.remove(),2000);
+    }
+  }
+}
 </script>
 </body>
 </html>
