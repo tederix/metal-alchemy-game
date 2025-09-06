@@ -1,208 +1,427 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
 <title>Металлургическая алхимия</title>
 <style>
-body{margin:0;font-family:Arial;display:flex;flex-direction:column;align-items:center;padding:12px;gap:12px;transition:background 0.3s,color 0.3s;overflow-x:hidden;}
-body.dark{background:#151515;color:#eee;}
-body.light{background:#f5f5f5;color:#222;}
-h2{margin:0 0 8px 0;font-size:16px;}
-main{width:100%;max-width:1400px;display:grid;grid-template-columns:1fr;gap:12px;}
-.panel{padding:12px;border-radius:10px;transition:background 0.3s;}
-body.dark .panel{background:#222;}
-body.light .panel{background:#fff;}
-#inventory,#mobile-inventory{display:flex;gap:8px;flex-wrap:wrap;transition:all 0.3s ease;}
-.item,.btn{padding:8px 10px;border-radius:8px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center;transition:all 0.3s ease;}
-body.dark .item,.btn{background:#3a3a3a;color:#eee;}
-body.light .item,.btn{background:#ddd;color:#222;}
-.item{cursor:grab;width:64px;text-align:center;display:flex;flex-direction:column;align-items:center;transition:all 0.3s ease;}
-.item img{width:64px;height:64px;}
-.item span{margin-top:4px;font-size:12px;}
-.machine{border-radius:10px;padding:10px;min-width:220px;flex:1;display:flex;flex-direction:column;align-items:center;transition:all 0.3s ease;}
-body.dark .machine{background:#292929;color:#eee;}
-body.light .machine{background:#eee;color:#222;}
-.machine-title{text-align:center;font-weight:bold;margin-bottom:6px;}
-.slots{min-height:64px;padding:6px;border-radius:8px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;position:relative;transition:all 0.3s ease;}
-body.dark .slots{background:#1f1f1f;}
-body.light .slots{background:#ddd;}
-.slot-item{padding:0;border-radius:6px;width:64px;text-align:center;display:flex;flex-direction:column;align-items:center;transition:all 0.3s ease;opacity:0;transform:translateY(-10px);}
-.slot-item.show{opacity:1;transform:translateY(0);transition:all 0.1s ease;}
-body.dark .slot-item{background:#444;color:#eee;}
-body.light .slot-item{background:#bbb;color:#222;}
-.slot-item img{width:64px;height:64px;}
-.slot-item span{margin-top:4px;font-size:12px;}
-.machine.dragover{outline:3px dashed rgba(136,170,255,0.18);}
-.controls{display:flex;gap:6px;margin-top:6px;width:100%;}
-.controls .btn{flex:1;}
-.confetti-piece{position:absolute;width:8px;height:8px;background:gold;animation:confettiFall 2s linear forwards;}
-@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);}100%{transform:translateY(400px) rotate(720deg);opacity:0;}}
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:10;}
-body.dark .modal{background:rgba(0,0,0,0.85);}
-body.light .modal{background:rgba(255,255,255,0.85);}
-.modal-content{background:#222;padding:20px;border-radius:12px;text-align:center;transition:all 0.3s ease;color:#eee;}
-body.light .modal-content{background:#fff;color:#222;}
-.modal-content button{margin-top:12px;padding:12px 16px;border-radius:8px;border:none;background:#3a3a3a;color:#eee;cursor:pointer;transition:all 0.3s ease;font-size:14px;}
-body.light .modal-content button{background:#ddd;color:#222;}
-#toggle-inv{position:fixed;top:10px;left:10px;z-index:1000;display:none;}
-#mobile-inventory{position:fixed;top:50px;left:0;right:0;background:rgba(0,0,0,0.95);color:#fff;padding:10px;display:none;flex-wrap:wrap;gap:8px;z-index:999;justify-content:center;transition:all 0.1s ease;}
-#recipes-panel{position:fixed;top:50px;right:10px;width:350px;background:rgba(0,0,0,0.95);color:#fff;padding:10px;border-radius:10px;display:none;flex-direction:column;gap:6px;max-height:90vh;overflow:auto;z-index:1000;transition:all 0.3s ease;}
-#recipes-panel.show{display:flex;}
-#recipes-panel h3{text-align:center;margin:0 0 6px 0;}
-@media (max-width:768px){
-  main{grid-template-columns:1fr;}
-  .machine{min-width:100%;}
-  #inventory{display:none;}
-  #toggle-inv{display:block;}
-  #mobile-inventory .item img{width:48px;height:48px;}
-  #mobile-inventory .item span{font-size:10px;}
-}
-@media (min-width:769px){
-  #toggle-inv{display:none;}
-  #inventory{display:flex;width:100%;flex-wrap:wrap;}
-  #mobile-inventory{display:none;}
-}
+  :root{--panel-bg-dark:#222;--panel-bg-light:#fff;--body-dark:#151515;--body-light:#f5f5f5;--text-dark:#eee;--text-light:#222;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px;transition:background .3s,color .3s;overflow-x:hidden}
+  body.dark{background:var(--body-dark);color:var(--text-dark)}
+  body.light{background:var(--body-light);color:var(--text-light)}
+  h2{margin:0 0 8px;font-size:16px}
+  main{width:100%;max-width:1400px;display:grid;grid-template-columns:1fr;gap:12px}
+  .panel{padding:12px;border-radius:10px;transition:background .3s}
+  body.dark .panel{background:var(--panel-bg-dark)}
+  body.light .panel{background:var(--panel-bg-light)}
+  #inventory,#mobile-inventory{display:flex;gap:8px;flex-wrap:wrap;transition:all .3s ease}
+  .item,.btn{padding:8px 10px;border-radius:8px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center;transition:all .2s ease}
+  body.dark .item,.btn{background:#3a3a3a;color:#eee}
+  body.light .item,.btn{background:#ddd;color:#222}
+  .item{cursor:grab;width:74px;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .item img{width:64px;height:64px;display:block}
+  .item span{margin-top:4px;font-size:12px;line-height:1.1}
+  .item.dragging{opacity:.85;scale:1.05}
+  .machine{border-radius:10px;padding:10px;min-width:260px;flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+  body.dark .machine{background:#292929}
+  body.light .machine{background:#eee}
+  .machine-title{font-weight:bold;text-align:center}
+  .slots{min-height:84px;padding:6px;border-radius:8px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;position:relative}
+  body.dark .slots{background:#1f1f1f}
+  body.light .slots{background:#ddd}
+  .slot-pill{width:74px;border-radius:6px;display:flex;flex-direction:column;align-items:center;padding:2px 0;opacity:0;transform:translateY(-6px);transition:opacity .12s ease,transform .12s ease}
+  .slot-pill.show{opacity:1;transform:translateY(0)}
+  .slot-pill img{width:64px;height:64px}
+  .slot-pill span{font-size:12px;margin-top:2px}
+  .machine.dragover{outline:3px dashed rgba(136,170,255,.18)}
+  .controls{display:flex;gap:6px;width:100%}
+  .controls .btn{flex:1}
+  .flash{position:absolute;inset:0;border-radius:12px;background:radial-gradient(circle at 50% 50%,rgba(255,255,160,.8),rgba(255,255,0,.3) 40%,transparent 70%);animation:flashAnim .45s ease}
+  @keyframes flashAnim{0%{opacity:0;transform:scale(.6)}50%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.2)}}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .confetti-piece{position:absolute;width:8px;height:8px;background:gold;top:-10px;animation:fall 2.2s linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+  .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:20}
+  body.dark .modal{background:rgba(0,0,0,.85)}
+  body.light .modal{background:rgba(255,255,255,.85)}
+  .modal-content{background:#222;color:#eee;padding:20px;border-radius:12px;max-width:520px;text-align:center}
+  body.light .modal-content{background:#fff;color:#222}
+  .modal-content p{margin:6px 0 0}
+  #topbar{width:100%;display:flex;justify-content:flex-end;gap:6px;padding:6px}
+  #toggle-inv{position:fixed;top:10px;left:10px;z-index:12;display:none}
+  #mobile-inventory{position:fixed;top:56px;left:0;right:0;background:rgba(0,0,0,.95);color:#fff;padding:10px;display:none;flex-wrap:wrap;gap:8px;z-index:11;justify-content:center}
+  #recipes-panel{position:fixed;top:56px;right:10px;width:380px;max-height:88vh;overflow:auto;background:rgba(0,0,0,.95);color:#fff;padding:12px;border-radius:10px;display:none;flex-direction:column;gap:8px;z-index:12}
+  #recipes-panel.show{display:flex}
+  #recipes-panel h3{text-align:center;margin:0 0 6px}
+  #recipes-list .recipe{font-size:13px;line-height:1.2;background:rgba(255,255,255,.06);padding:6px;border-radius:6px}
+  @media (max-width:768px){
+    main{grid-template-columns:1fr}
+    .machine{min-width:100%}
+    #inventory{display:none}
+    /* Кнопка показывается только ПОСЛЕ старта из JS */
+    #mobile-inventory .item img{width:48px;height:48px}
+    #mobile-inventory .item span{font-size:10px}
+    #recipes-panel{width:min(92vw,420px)}
+  }
+  @media (min-width:769px){
+    #inventory{display:flex;width:100%;flex-wrap:wrap}
+    #mobile-inventory{display:none}
+  }
 </style>
 </head>
 <body class="dark">
 
-<div style="width:100%;display:flex;justify-content:flex-end;padding:6px;gap:6px;">
+<div id="topbar">
   <button class="btn" onclick="toggleTheme()">Сменить тему</button>
   <button class="btn" onclick="toggleRecipes()">Рецепты</button>
 </div>
 
 <button id="toggle-inv" class="btn">Инвентарь</button>
 <div id="mobile-inventory"></div>
-<div id="recipes-panel"><h3>Открытые рецепты</h3><div id="recipes-list"></div></div>
+
+<div id="recipes-panel">
+  <h3>Открытые рецепты</h3>
+  <div id="recipes-list"></div>
+</div>
 
 <div id="modal" class="modal">
   <div class="modal-content">
     <h2>Инструкция</h2>
-    <p>Перетащи компоненты в агрегаты, чтобы создавать новые материалы. Добейся создания трубы!</p>
-    <button onclick="startGame()">Начать</button>
+    <p>Перетаскивайте материалы в установки и нажимайте «Обработать».</p>
+    <p>Базовые материалы бесконечны: воздух, уголь, руда.</p>
+    <p>Задача: дойдите до «труба»!</p>
+    <button class="btn" onclick="startGame()">Начать</button>
   </div>
 </div>
 
-<main style="display:none;width:100%;">
-<section class="panel" style="grid-column:1 / -1;">
-<h2>Инвентарь</h2>
-<div id="inventory"></div>
-</section>
+<main style="display:none">
+  <section class="panel" style="grid-column:1 / -1">
+    <h2>Инвентарь</h2>
+    <div id="inventory"></div>
+  </section>
 
-<section class="panel" style="grid-column:1 / -1;">
-<h2>Установки</h2>
-<div id="machines-container" style="display:flex;flex-wrap:wrap;gap:12px;"></div>
-</section>
+  <section class="panel" style="grid-column:1 / -1">
+    <h2>Установки</h2>
+    <div id="machines-container" style="display:flex;flex-wrap:wrap;gap:12px"></div>
+  </section>
 </main>
 
+<div id="confetti" class="confetti"></div>
+
 <script>
-// базовые данные
-const BASE_ITEMS=["воздух","уголь","руда"];
-const MACHINES=["коксовая батарея","установка сухого тушения кокса","воздухоразделительная установка","валковый магнитный сепаратор","агломерационная машина","гранулятор","доменная печь","конвертер","машина непрерывного литья заготовок","стан горячей прокатки","стан холодной прокатки","трубогибочный стан"];
-const RECIPES=[
-{components:["уголь"],machine:"коксовая батарея",result:"раскаленный кокс"},
-{components:["раскаленный кокс"],machine:"установка сухого тушения кокса",result:"кокс"},
-{components:["руда"],machine:"валковый магнитный сепаратор",result:"концентрат"},
-{components:["концентрат"],machine:"агломерационная машина",result:"агломерат"},
-{components:["концентрат"],machine:"гранулятор",result:"окатыши"},
-{components:["кокс","агломерат"],machine:"доменная печь",result:"чугун"},
-{components:["кокс","окатыши"],machine:"доменная печь",result:"чугун"},
-{components:["кокс","агломерат","окатыши"],machine:"доменная печь",result:"чугун"},
-{components:["воздух"],machine:"воздухоразделительная установка",result:"кислород"},
-{components:["чугун","кислород"],machine:"конвертер",result:"сталь"},
-{components:["сталь"],machine:"машина непрерывного литья заготовок",result:"слябы"},
-{components:["слябы"],machine:"стан горячей прокатки",result:"горячекатаный лист"},
-{components:["горячекатаный лист"],machine:"стан холодной прокатки",result:"холоднокатаный лист"},
-{components:["холоднокатаный лист"],machine:"трубогибочный стан",result:"труба"}];
+/* ---------- Данные ---------- */
+const BASE_ITEMS = ["воздух","уголь","руда"];
+const MACHINES = [
+  "коксовая батарея","установка сухого тушения кокса","воздухоразделительная установка",
+  "валковый магнитный сепаратор","агломерационная машина","гранулятор",
+  "доменная печь","конвертер","машина непрерывного литья заготовок",
+  "стан горячей прокатки","стан холодной прокатки","трубогибочный стан"
+];
+const RECIPES = [
+  {components:["уголь"], machine:"коксовая батарея", result:"раскаленный кокс"},
+  {components:["раскаленный кокс"], machine:"установка сухого тушения кокса", result:"кокс"},
+  {components:["руда"], machine:"валковый магнитный сепаратор", result:"концентрат"},
+  {components:["концентрат"], machine:"агломерационная машина", result:"агломерат"},
+  {components:["концентрат"], machine:"гранулятор", result:"окатыши"},
+  {components:["кокс","агломерат"], machine:"доменная печь", result:"чугун"},
+  {components:["кокс","окатыши"], machine:"доменная печь", result:"чугун"},
+  {components:["кокс","агломерат","окатыши"], machine:"доменная печь", result:"чугун"},
+  {components:["воздух"], machine:"воздухоразделительная установка", result:"кислород"},
+  {components:["чугун","кислород"], machine:"конвертер", result:"сталь"},
+  {components:["сталь"], machine:"машина непрерывного литья заготовок", result:"слябы"},
+  {components:["слябы"], machine:"стан горячей прокатки", result:"горячекатаный лист"},
+  {components:["горячекатаный лист"], machine:"стан холодной прокатки", result:"холоднокатаный лист"},
+  {components:["холоднокатаный лист"], machine:"трубогибочный стан", result:"труба"}
+];
+/* Иконки: положите эти файлы в папку /icons рядом с index.html */
+const IMAGE_MAP = {
+  "воздух":"icons/vozduh.png","уголь":"icons/ugol.png","руда":"icons/ruda.png",
+  "раскаленный кокс":"icons/raskalennyi_koks.png","кокс":"icons/koks.png",
+  "концентрат":"icons/koncentrat.png","агломерат":"icons/agglomerat.png",
+  "окатыши":"icons/okatyshi.png","чугун":"icons/chugun.png",
+  "кислород":"icons/kislorod.png","сталь":"icons/stal.png",
+  "слябы":"icons/slyaby.png","горячекатаный лист":"icons/goryachekatany_list.png",
+  "холоднокатаный лист":"icons/kholodnokatany_list.png","труба":"icons/truba.png"
+};
+/* ---------- Состояние ---------- */
+const state = {
+  inventory: [],              // только НЕ базовые предметы
+  machines: {},               // { machine: [items...] }
+  discoveredByIdx: {}         // открытые рецепты по индексу RECIPES
+};
+MACHINES.forEach(m => state.machines[m] = []);
 
-const IMAGE_MAP={
-"воздух":"icons/vozduh.png","уголь":"icons/ugol.png","руда":"icons/ruda.png",
-"раскаленный кокс":"icons/raskalennyi_koks.png","кокс":"icons/koks.png",
-"концентрат":"icons/koncentrat.png","агломерат":"icons/agglomerat.png",
-"окатыши":"icons/okatyshi.png","чугун":"icons/chugun.png",
-"кислород":"icons/kislorod.png","сталь":"icons/stal.png",
-"слябы":"icons/slyaby.png","горячекатаный лист":"icons/goryachekatany_list.png",
-"холоднокатаный лист":"icons/kholodnokatany_list.png","труба":"icons/truba.png"};
+/* ---------- Утилиты ---------- */
+const byId = id => document.getElementById(id);
+function toggleTheme(){ document.body.classList.toggle("dark"); document.body.classList.toggle("light"); }
+function toggleRecipes(){ byId("recipes-panel").classList.toggle("show"); }
+function isMobile(){ return window.matchMedia("(max-width:768px)").matches; }
 
-let state={inventory:[],machines:{},discovered:{}};
-MACHINES.forEach(m=>state.machines[m]=[]);
+/* ---------- Старт ---------- */
+function startGame(){
+  // инвентарь не содержит базовые — они рисуются «всегда»
+  state.inventory = [];
+  // показать основной UI
+  byId("modal").style.display = "none";
+  document.querySelector("main").style.display = "grid";
+  // показать кнопку инвентаря только на мобилке
+  const t = byId("toggle-inv");
+  if(isMobile()){ t.style.display = "block"; } else { t.style.display = "none"; }
+  renderAll();
+}
 
-function toggleTheme(){document.body.classList.toggle("dark");document.body.classList.toggle("light");}
-function toggleRecipes(){document.getElementById("recipes-panel").classList.toggle("show");}
-function startGame(){state.inventory=[...BASE_ITEMS]; document.getElementById("modal").style.display="none"; document.querySelector("main").style.display="grid"; render();}
+/* ---------- Рендер инвентаря ---------- */
+function createItemElement(name, isBase, invIndex){
+  const el = document.createElement("div");
+  el.className = "item";
+  el.draggable = true;
+  el.dataset.base = isBase ? "1" : "";
+  el.dataset.index = isBase ? "-1" : String(invIndex);
+  const img = document.createElement("img");
+  img.src = IMAGE_MAP[name] || "";
+  img.alt = name;
+  const span = document.createElement("span");
+  span.textContent = name;
+  el.append(img, span);
 
-function createItemElement(name,index){
-  const el=document.createElement("div"); el.className="item"; el.draggable=true; el.dataset.index=index; el.dataset.base=BASE_ITEMS.includes(name)?"1":"";
-  const img=document.createElement("img"); img.src=IMAGE_MAP[name]; img.alt=name;
-  const span=document.createElement("span"); span.textContent=name; el.appendChild(img); el.appendChild(span);
-  setTimeout(()=>el.classList.add("show"),20);
-  let dragged=null;
-  el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/index",index); e.dataTransfer.setData("text/base",el.dataset.base?name:"");});
-  el.addEventListener("touchstart",e=>{dragged=el; el.classList.add("dragging"); e.preventDefault();});
-  el.addEventListener("touchmove",e=>{
-    if(!dragged) return; const t=e.touches[0];
-    dragged.style.position="absolute"; dragged.style.left=(t.pageX-28)+"px"; dragged.style.top=(t.pageY-28)+"px"; dragged.style.zIndex=1000; dragged.style.transition="transform 0.1s ease";
+  // Desktop DnD
+  el.addEventListener("dragstart", e=>{
+    e.dataTransfer.setData("text/name", name);
+    e.dataTransfer.setData("text/base", isBase ? "1" : "");
+    e.dataTransfer.setData("text/index", isBase ? "-1" : String(invIndex));
   });
-  el.addEventListener("touchend",e=>{
-    if(!dragged) return; dragged.style.position=""; dragged.style.left=""; dragged.style.top=""; dragged.style.zIndex=""; dragged.style.transition="";
-    document.querySelectorAll(".machine").forEach(machine=>{
-      const r=machine.getBoundingClientRect(); const t=e.changedTouches[0];
-      if(t.clientX>=r.left && t.clientX<=r.right && t.clientY>=r.top && t.clientY<=r.bottom){ dropToMachine(name,index,machine.dataset.machine);}
-    }); dragged.classList.remove("dragging"); dragged=null;
+
+  // Mobile Touch — ускорено
+  let dragged = null;
+  el.addEventListener("touchstart", e=>{
+    dragged = el;
+    el.classList.add("dragging");
+    e.preventDefault();
+  }, {passive:false});
+
+  el.addEventListener("touchmove", e=>{
+    if(!dragged) return;
+    const t = e.touches[0];
+    dragged.style.position = "absolute";
+    dragged.style.left = (t.pageX - 28) + "px";
+    dragged.style.top  = (t.pageY - 28) + "px";
+    dragged.style.zIndex = 1000;
+    dragged.style.transition = "transform .1s ease";
+  }, {passive:false});
+
+  el.addEventListener("touchend", e=>{
+    if(!dragged) return;
+    // hit-test по машинам
+    const touch = e.changedTouches[0];
+    document.querySelectorAll(".machine").forEach(m=>{
+      const r = m.getBoundingClientRect();
+      if(touch.clientX>=r.left && touch.clientX<=r.right && touch.clientY>=r.top && touch.clientY<=r.bottom){
+        dropToMachine(name, isBase, invIndex, m.dataset.machine);
+      }
+    });
+    // сброс визуала
+    dragged.style.position = "";
+    dragged.style.left = "";
+    dragged.style.top = "";
+    dragged.style.zIndex = "";
+    dragged.style.transition = "";
+    dragged.classList.remove("dragging");
+    dragged = null;
   });
+
   return el;
 }
 
-function renderInventory(){const inv=document.getElementById("inventory"); inv.innerHTML=""; state.inventory.forEach((it,idx)=>inv.appendChild(createItemElement(it,idx))); renderMobileInventory();}
-function renderMobileInventory(){const inv=document.getElementById("mobile-inventory"); inv.innerHTML=""; state.inventory.forEach((it,idx)=>inv.appendChild(createItemElement(it,idx)));}
+function renderInventory(){
+  const inv = byId("inventory");
+  const invMobile = byId("mobile-inventory");
+  inv.innerHTML = "";
+  invMobile.innerHTML = "";
 
-document.getElementById("toggle-inv").addEventListener("click",()=>{const inv=document.getElementById("mobile-inventory"); inv.style.display=inv.style.display==="flex"?"none":"flex"; renderMobileInventory();});
+  // сначала базовые (бесконечные), затем реальные предметы
+  const fullList = [...BASE_ITEMS.map(n=>({name:n,isBase:true,index:-1})), ...state.inventory.map((n,i)=>({name:n,isBase:false,index:i}))];
 
-function renderMachines(){
-  const container=document.getElementById("machines-container"); container.innerHTML="";
-  MACHINES.forEach(machine=>{
-    const div=document.createElement("div"); div.className="machine"; div.dataset.machine=machine;
-    const title=document.createElement("div"); title.className="machine-title"; title.textContent=machine;
-    const slots=document.createElement("div"); slots.className="slots"; div.appendChild(title); div.appendChild(slots);
-    const controls=document.createElement("div"); controls.className="controls";
-    const btn1=document.createElement("button"); btn1.className="btn"; btn1.textContent="Обработать"; btn1.onclick=()=>processCraft(machine,slots);
-    const btn2=document.createElement("button"); btn2.className="btn"; btn2.textContent="Очистить"; btn2.onclick=()=>clearMachine(machine,slots);
-    controls.appendChild(btn1); controls.appendChild(btn2); div.appendChild(controls);
-    container.appendChild(div);
-    div.addEventListener("dragover",e=>{e.preventDefault(); div.classList.add("dragover");});
-    div.addEventListener("dragleave",()=>div.classList.remove("dragover"));
-    div.addEventListener("drop",e=>{div.classList.remove("dragover"); const idx=e.dataTransfer.getData("text/index"); const name=state.inventory[idx]; dropToMachine(name,idx,machine);});
+  fullList.forEach(({name,isBase,index})=>{
+    inv.appendChild(createItemElement(name,isBase,index));
+    invMobile.appendChild(createItemElement(name,isBase,index));
   });
 }
 
-function dropToMachine(name,index,machine){
-  const slots=document.querySelector(`.machine[data-machine="${machine}"] .slots`);
+/* ---------- Машины ---------- */
+function renderMachines(){
+  const cont = byId("machines-container");
+  cont.innerHTML = "";
+  MACHINES.forEach(machine=>{
+    const wrap = document.createElement("div");
+    wrap.className = "machine";
+    wrap.dataset.machine = machine;
+
+    const title = document.createElement("div");
+    title.className = "machine-title";
+    title.textContent = machine;
+
+    const slots = document.createElement("div");
+    slots.className = "slots";
+
+    // заполнить текущими элементами
+    state.machines[machine].forEach(it=>{
+      const pill = document.createElement("div");
+      pill.className = "slot-pill show";
+      const img = document.createElement("img"); img.src = IMAGE_MAP[it] || ""; img.alt = it;
+      const cap = document.createElement("span"); cap.textContent = it;
+      pill.append(img,cap);
+      slots.appendChild(pill);
+    });
+
+    const controls = document.createElement("div");
+    controls.className = "controls";
+    const bProc = document.createElement("button");
+    bProc.className = "btn"; bProc.textContent = "Обработать";
+    bProc.onclick = ()=>processCraft(machine, slots);
+    const bClear = document.createElement("button");
+    bClear.className = "btn"; bClear.textContent = "Очистить";
+    bClear.onclick = ()=>clearMachine(machine, slots);
+    controls.append(bProc,bClear);
+
+    // DnD события
+    wrap.addEventListener("dragover", e=>{e.preventDefault(); wrap.classList.add("dragover");});
+    wrap.addEventListener("dragleave", ()=>wrap.classList.remove("dragover"));
+    wrap.addEventListener("drop", e=>{
+      wrap.classList.remove("dragover");
+      const name = e.dataTransfer.getData("text/name");
+      const isBase = e.dataTransfer.getData("text/base")==="1";
+      const idx = parseInt(e.dataTransfer.getData("text/index")||"-1",10);
+      dropToMachine(name, isBase, idx, machine);
+    });
+
+    wrap.append(title, slots, controls);
+    cont.appendChild(wrap);
+  });
+}
+
+function dropToMachine(name, isBase, invIndex, machine){
+  // добавить в список машины (в слоты)
   state.machines[machine].push(name);
-  if(!BASE_ITEMS.includes(name)) state.inventory.splice(index,1);
-  renderInventory(); renderMachines();
-}
 
-function processCraft(machine,slotsElem){
-  const comps=state.machines[machine];
-  let recipe=RECIPES.find(r=>r.machine===machine && r.components.length===comps.length && r.components.every(c=>comps.includes(c)));
-  if(recipe){
-    state.inventory.push(recipe.result); state.discovered[recipe.result]=true;
-    if(recipe.result==="труба"){showConfetti(); alert("Поздравляем! Вы создали трубу!");}
+  // если это НЕ базовый предмет — убрать из инвентаря
+  if(!isBase && invIndex>=0 && state.inventory[invIndex]===name){
+    state.inventory.splice(invIndex,1);
+  }else if(!isBase && invIndex<0){
+    // подстраховка при некорректном индексе: удалить первое вхождение
+    const pos = state.inventory.indexOf(name);
+    if(pos>-1) state.inventory.splice(pos,1);
   }
-  state.machines[machine]=[]; renderInventory(); renderMachines(); updateRecipes();
+
+  renderAll();
 }
 
-function clearMachine(machine){state.machines[machine]=[]; renderMachines();}
-
-function updateRecipes(){
-  const panel=document.getElementById("recipes-list"); panel.innerHTML="";
-  Object.keys(state.discovered).forEach(name=>{const div=document.createElement("div"); div.textContent=name; panel.appendChild(div);});
+/* ---------- Крафт ---------- */
+function arraysAsMultisetEqual(a,b){
+  if(a.length!==b.length) return false;
+  const cnt = new Map();
+  a.forEach(x=>cnt.set(x,(cnt.get(x)||0)+1));
+  for(const x of b){
+    const v = cnt.get(x);
+    if(!v) return false;
+    if(v===1) cnt.delete(x); else cnt.set(x,v-1);
+  }
+  return cnt.size===0;
 }
 
-function showConfetti(){for(let i=0;i<100;i++){const c=document.createElement("div"); c.className="confetti-piece"; c.style.left=Math.random()*window.innerWidth+"px"; c.style.background=["gold","red","blue","green"][Math.floor(Math.random()*4)]; document.body.appendChild(c); setTimeout(()=>c.remove(),2000);}}
+function processCraft(machine, slotsElem){
+  const input = [...state.machines[machine]];
+  const candidates = RECIPES.filter(r=>r.machine===machine);
+  const foundIdx = candidates.findIndex(r=>arraysAsMultisetEqual(r.components, input));
+  if(foundIdx>-1){
+    const recipe = candidates[foundIdx];
+    // успех: вспышка
+    craftFlash(slotsElem);
+    // выдать результат в инвентарь
+    state.inventory.push(recipe.result);
+    // отметить открытый рецепт (нельзя раскрывать заранее)
+    const globalIdx = RECIPES.findIndex(R=>R===recipe);
+    state.discoveredByIdx[globalIdx] = true;
 
-function render(){renderInventory(); renderMachines(); updateRecipes();}
+    // победа?
+    if(recipe.result==="труба"){
+      showConfetti();
+      setTimeout(()=>alert("Поздравляем! Вы изготовили трубу и прошли игру!"), 50);
+    }
+  }
+  // независимо от успеха — содержимое машины расходуется
+  state.machines[machine] = [];
+  renderAll();
+}
+
+function clearMachine(machine){
+  state.machines[machine] = [];
+  renderAll();
+}
+
+/* ---------- Вспышка и конфетти ---------- */
+function craftFlash(slotsElem){
+  const f = document.createElement("div");
+  f.className = "flash";
+  slotsElem.appendChild(f);
+  setTimeout(()=>f.remove(), 450);
+}
+
+function showConfetti(){
+  const root = byId("confetti");
+  for(let i=0;i<120;i++){
+    const p = document.createElement("div");
+    p.className = "confetti-piece";
+    p.style.left = (Math.random()*100)+"vw";
+    p.style.background = ["gold","deepskyblue","lime","tomato","violet"][Math.floor(Math.random()*5)];
+    p.style.animationDelay = (Math.random()*0.6)+"s";
+    p.style.transform = `translateY(0) rotate(${Math.random()*360}deg)`;
+    root.appendChild(p);
+    setTimeout(()=>p.remove(), 2600);
+  }
+}
+
+/* ---------- Рецепты (открытые) ---------- */
+function renderRecipes(){
+  const list = byId("recipes-list");
+  list.innerHTML = "";
+  Object.keys(state.discoveredByIdx).forEach(k=>{
+    if(!state.discoveredByIdx[k]) return;
+    const r = RECIPES[+k];
+    const line = document.createElement("div");
+    line.className = "recipe";
+    line.textContent = `${r.components.join(" + ")} + [${r.machine}] → ${r.result}`;
+    list.appendChild(line);
+  });
+}
+
+/* ---------- Общий рендер ---------- */
+function renderAll(){
+  renderInventory();
+  renderMachines();
+  renderRecipes();
+}
+
+/* ---------- Инвентарь-панель мобильная ---------- */
+byId("toggle-inv").addEventListener("click", ()=>{
+  const p = byId("mobile-inventory");
+  const next = p.style.display==="flex" ? "none" : "flex";
+  p.style.display = next;
+  if(next==="flex"){ renderInventory(); } // перерисовать содержимое
+});
+
+/* ---------- Первичная инициализация ---------- */
+window.addEventListener("DOMContentLoaded", ()=>{
+  // скрыть кнопку инвентаря до старта
+  byId("toggle-inv").style.display = "none";
+  // по умолчанию тёмная тема
+  document.body.classList.add("dark");
+});
+
+/* ---------- Экспорт в глобал для кнопок ---------- */
+window.toggleTheme = toggleTheme;
+window.toggleRecipes = toggleRecipes;
+window.startGame = startGame;
 </script>
 </body>
 </html>
