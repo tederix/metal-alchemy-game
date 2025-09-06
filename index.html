@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Металлургическая алхимия</title>
 <style>
 body{margin:0;font-family:Arial;display:flex;flex-direction:column;align-items:center;padding:18px;gap:14px;transition:background 0.3s,color 0.3s;}
@@ -42,8 +43,14 @@ body.dark .modal{background:rgba(0,0,0,0.85);}
 body.light .modal{background:rgba(255,255,255,0.85);}
 .modal-content{background:#222;padding:20px;border-radius:12px;text-align:center;transition:background 0.3s,color 0.3s;}
 body.light .modal-content{background:#fff;color:#222;}
-.modal-content button{margin-top:12px;padding:8px 16px;border-radius:8px;border:none;background:#3a3a3a;color:#eee;cursor:pointer;transition:background 0.3s,color 0.3s;}
+.modal-content button{margin-top:12px;padding:12px 16px;border-radius:8px;border:none;background:#3a3a3a;color:#eee;cursor:pointer;transition:background 0.3s,color 0.3s;font-size:14px;}
 body.light .modal-content button{background:#ddd;color:#222;}
+@media (max-width:768px){
+  main{grid-template-columns:1fr;}
+  .machine{min-width:100%;}
+  #inventory{justify-content:center;}
+  .slots{justify-content:center;}
+}
 </style>
 </head>
 <body class="dark">
@@ -78,13 +85,6 @@ body.light .modal-content button{background:#ddd;color:#222;}
 </main>
 
 <script>
-// Переключение темы
-function toggleTheme(){
-  document.body.classList.toggle("dark");
-  document.body.classList.toggle("light");
-}
-
-// Игровая логика
 const BASE_ITEMS=["воздух","уголь","руда"];
 const MACHINES=[
   "коксовая батарея","установка сухого тушения кокса","воздухоразделительная установка",
@@ -110,26 +110,22 @@ const RECIPES=[
   {components:["холоднокатаный лист"],machine:"трубогибочный стан",result:"труба"}
 ];
 
-const IMAGE_MAP = {
-  "воздух":"icons/vozduh.png",
-  "уголь":"icons/ugol.png",
-  "руда":"icons/ruda.png",
-  "раскаленный кокс":"icons/raskalennyi_koks.png",
-  "кокс":"icons/koks.png",
-  "концентрат":"icons/koncentrat.png",
-  "агломерат":"icons/agglomerat.png",
-  "окатыши":"icons/okatyshi.png",
-  "чугун":"icons/chugun.png",
-  "кислород":"icons/kislorod.png",
-  "сталь":"icons/stal.png",
-  "слябы":"icons/slyaby.png",
-  "горячекатаный лист":"icons/goryachekatany_list.png",
-  "холоднокатаный лист":"icons/kholodnokatany_list.png",
-  "труба":"icons/truba.png"
-};
+const IMAGE_MAP={
+"воздух":"icons/vozduh.png","уголь":"icons/ugol.png","руда":"icons/ruda.png",
+"раскаленный кокс":"icons/raskalennyi_koks.png","кокс":"icons/koks.png",
+"концентрат":"icons/koncentrat.png","агломерат":"icons/agglomerat.png",
+"окатыши":"icons/okatyshi.png","чугун":"icons/chugun.png",
+"кислород":"icons/kislorod.png","сталь":"icons/stal.png",
+"слябы":"icons/slyaby.png","горячекатаный лист":"icons/goryachekatany_list.png",
+"холоднокатаный лист":"icons/kholodnokatany_list.png","труба":"icons/truba.png"};
 
 let state={inventory:[],machines:{},discovered:{}};
 MACHINES.forEach(m=>state.machines[m]=[]);
+
+function toggleTheme(){
+  document.body.classList.toggle("dark");
+  document.body.classList.toggle("light");
+}
 
 function startGame(){
   state.inventory=[...BASE_ITEMS];
@@ -144,42 +140,82 @@ function createItemElement(name,index){
   el.draggable=true;
   el.dataset.index=index;
   el.dataset.base = BASE_ITEMS.includes(name) ? "1" : "";
-  const img=document.createElement("img");
-  img.src = IMAGE_MAP[name];
-  img.alt=name;
-  const span=document.createElement("span");
-  span.textContent=name;
-  el.appendChild(img);
-  el.appendChild(span);
+  const img=document.createElement("img"); img.src=IMAGE_MAP[name]; img.alt=name;
+  const span=document.createElement("span"); span.textContent=name;
+  el.appendChild(img); el.appendChild(span);
+
+  // Drag для ПК
   el.addEventListener("dragstart", e=>{
     e.dataTransfer.setData("text/index",index);
     e.dataTransfer.setData("text/base", el.dataset.base ? name : "");
   });
+
+  // Touch для телефона
+  let dragged=null;
+  el.addEventListener("touchstart", e=>{
+    dragged=el;
+    el.classList.add("dragging");
+    e.preventDefault();
+  });
+  el.addEventListener("touchmove", e=>{
+    if(!dragged) return;
+    const touch=e.touches[0];
+    dragged.style.position="absolute";
+    dragged.style.left=touch.pageX-32+"px";
+    dragged.style.top=touch.pageY-32+"px";
+    dragged.style.zIndex=1000;
+  });
+  el.addEventListener("touchend", e=>{
+    if(!dragged) return;
+    dragged.style.position=""; dragged.style.left=""; dragged.style.top=""; dragged.style.zIndex="";
+    document.querySelectorAll(".machine").forEach(machine=>{
+      const rect=machine.getBoundingClientRect();
+      const touch=e.changedTouches[0];
+      if(touch.clientX>=rect.left && touch.clientX<=rect.right &&
+         touch.clientY>=rect.top && touch.clientY<=rect.bottom){
+        dropToMachine(name,index,machine.dataset.machine);
+      }
+    });
+    dragged.classList.remove("dragging");
+    dragged=null;
+  });
+
   return el;
 }
 
+function dropToMachine(name,index,machine){
+  const slots=document.getElementById("slots-"+machine);
+  state.machines[machine].push(name);
+  if(!BASE_ITEMS.includes(name)) state.inventory.splice(index,1);
+  const el=document.createElement("div"); el.className="slot-item";
+  const img=document.createElement("img"); img.src=IMAGE_MAP[name]; img.alt=name;
+  const span=document.createElement("span"); span.textContent=name;
+  el.appendChild(img); el.appendChild(span);
+  slots.appendChild(el);
+  renderInventory();
+}
+
 function renderInventory(){
-  const inv=document.getElementById("inventory");inv.innerHTML="";
-  state.inventory.forEach((it,idx)=>inv.appendChild(createItemElement(it,idx)));
+  const inv=document.getElementById("inventory"); inv.innerHTML="";
+  state.inventory.forEach((it,idx)=> inv.appendChild(createItemElement(it,idx)));
 }
 
 function renderMachines(){
-  const container=document.getElementById("machines-container");container.innerHTML="";
+  const container=document.getElementById("machines-container"); container.innerHTML="";
   MACHINES.forEach(m=>{
-    const div=document.createElement("div");div.className="machine";div.dataset.machine=m;
+    const div=document.createElement("div"); div.className="machine"; div.dataset.machine=m;
     div.innerHTML=`<div class="machine-title">${m}</div><div class="slots" id="slots-${m}"></div>
-    <div class="controls">
-      <div class="btn" onclick="processMachine('${m}')">Обработать</div>
-      <div class="btn" onclick="clearMachine('${m}')">Очистить</div>
-    </div>`;
+      <div class="controls">
+        <div class="btn" onclick="processMachine('${m}')">Обработать</div>
+        <div class="btn" onclick="clearMachine('${m}')">Очистить</div>
+      </div>`;
     container.appendChild(div);
   });
   for(const m of MACHINES){
-    const slots=document.getElementById("slots-"+m);slots.innerHTML="";
+    const slots=document.getElementById("slots-"+m); slots.innerHTML="";
     state.machines[m].forEach(it=>{
-      const el=document.createElement("div");el.className="slot-item";
-      const img=document.createElement("img");
-      img.src = IMAGE_MAP[it]; img.alt=it;
+      const el=document.createElement("div"); el.className="slot-item";
+      const img=document.createElement("img"); img.src=IMAGE_MAP[it]; img.alt=it;
       const span=document.createElement("span"); span.textContent=it;
       el.appendChild(img); el.appendChild(span);
       slots.appendChild(el);
@@ -189,10 +225,10 @@ function renderMachines(){
 }
 
 function renderRecipes(){
-  const rdiv=document.getElementById("recipes-list");rdiv.innerHTML="";
+  const rdiv=document.getElementById("recipes-list"); rdiv.innerHTML="";
   const keys=Object.keys(state.discovered);
   if(keys.length===0){rdiv.textContent="Пока рецептов нет";}
-  else keys.forEach(k=>{const div=document.createElement("div");div.textContent=k;rdiv.appendChild(div);});
+  else keys.forEach(k=>{const div=document.createElement("div"); div.textContent=k; rdiv.appendChild(div);});
 }
 
 function setupDropZones(){
@@ -206,18 +242,17 @@ function setupDropZones(){
       const slots=document.getElementById("slots-"+me.dataset.machine);
       if(base){
         state.machines[me.dataset.machine].push(base);
-        const el=document.createElement("div");el.className="slot-item";
+        const el=document.createElement("div"); el.className="slot-item";
         const img=document.createElement("img"); img.src=IMAGE_MAP[base]; img.alt=base;
         const span=document.createElement("span"); span.textContent=base;
         el.appendChild(img); el.appendChild(span);
-        slots.appendChild(el);
-        return;
+        slots.appendChild(el); return;
       }
       if(idx!=="" && state.inventory[idx]){
         const item=state.inventory[idx];
         if(!BASE_ITEMS.includes(item)) state.inventory.splice(idx,1);
         state.machines[me.dataset.machine].push(item);
-        const el=document.createElement("div");el.className="slot-item";
+        const el=document.createElement("div"); el.className="slot-item";
         const img=document.createElement("img"); img.src=IMAGE_MAP[item]; img.alt=item;
         const span=document.createElement("span"); span.textContent=item;
         el.appendChild(img); el.appendChild(span);
@@ -230,14 +265,14 @@ function setupDropZones(){
 
 function flashMachine(machine){
   const slots=document.getElementById("slots-"+machine);
-  const flash=document.createElement("div");flash.className="flash";
+  const flash=document.createElement("div"); flash.className="flash";
   slots.appendChild(flash);
   setTimeout(()=>flash.remove(),500);
 }
 
 function confetti(){
   for(let i=0;i<50;i++){
-    const c=document.createElement("div");c.className="confetti-piece";
+    const c=document.createElement("div"); c.className="confetti-piece";
     c.style.left=Math.random()*window.innerWidth+"px";
     document.body.appendChild(c);
     setTimeout(()=>c.remove(),2000);
@@ -259,11 +294,11 @@ function processMachine(machine){
   for(const r of RECIPES){
     if(r.machine!==machine) continue;
     if(slots.length!==r.components.length) continue;
-    const need={};r.components.forEach(c=>need[c]=(need[c]||0)+1);
-    const have={};slots.forEach(s=>have[s]=(have[s]||0)+1);
+    const need={}; r.components.forEach(c=>need[c]=(need[c]||0)+1);
+    const have={}; slots.forEach(s=>have[s]=(have[s]||0)+1);
     let ok=true;
-    for(const k in need){if(need[k]!==have[k]){ok=false;break;}}for(const k in have){if(need[k]!==have[k]){ok=false;break;}}
-    if(ok){candidate=r;break;}
+    for(const k in need){if(need[k]!==have[k]){ok=false;break;}} for(const k in have){if(need[k]!==have[k]){ok=false;break;}}
+    if(ok){candidate=r; break;}
   }
   if(candidate){
     animateCraft(slotsElem,candidate.result,machine,()=>{
@@ -271,10 +306,9 @@ function processMachine(machine){
       if(candidate.result==="труба"){confetti();alert("Поздравляем! Вы создали трубу!");}
       const text=candidate.components.join(" + ")+" + "+candidate.machine+" → "+candidate.result;
       if(!state.discovered[text]) state.discovered[text]=true;
-      renderMachines();
-      renderRecipes();
+      renderMachines(); renderRecipes();
     });
-  } else {state.machines[machine]=[];alert("Неудача. Компоненты потеряны.");renderMachines();}
+  } else {state.machines[machine]=[]; alert("Неудача. Компоненты потеряны."); renderMachines();}
 }
 
 function clearMachine(machine){state.machines[machine]=[];renderMachines();}
