@@ -9,6 +9,8 @@
   --panel-bg-dark:#222;--panel-bg-light:#fff;
   --body-dark:#151515;--body-light:#f5f5f5;
   --text-dark:#eee;--text-light:#222;
+  --btn-bg-dark:#444;--btn-bg-light:#ddd;
+  --btn-hover-dark:#555;--btn-hover-light:#ccc;
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto;
@@ -24,9 +26,13 @@ body.light .panel{background:var(--panel-bg-light)}
 #inventory,#mobile-inventory{display:flex;gap:8px;flex-wrap:wrap;transition:all .3s ease}
 .item,.btn{padding:8px 10px;border-radius:8px;cursor:pointer;user-select:none;
   display:flex;align-items:center;justify-content:center;transition:all .2s ease;position:relative}
-body.dark .item,.btn{background:#3a3a3a;color:#eee}
-body.light .item,.btn{background:#ddd;color:#222}
-.item{cursor:grab;width:90px;text-align:center;flex-direction:column}
+body.dark .item{background:#3a3a3a;color:#eee}
+body.light .item{background:#ddd;color:#222}
+body.dark .btn{background:var(--btn-bg-dark);color:#eee}
+body.dark .btn:hover{background:var(--btn-hover-dark)}
+body.light .btn{background:var(--btn-bg-light);color:#222}
+body.light .btn:hover{background:var(--btn-hover-light)}
+.item{cursor:grab;width:100px;text-align:center;flex-direction:column}
 .item img{width:64px;height:64px;display:block}
 .item span{margin-top:4px;font-size:12px;line-height:1.1;word-wrap:break-word}
 .item.dragging{opacity:.85;transform:scale(1.03)}
@@ -117,6 +123,20 @@ body.light .modal-content{background:#fff;color:#222}
 @media (min-width:769px){
   #inventory{display:flex;width:100%;flex-wrap:wrap}
   #mobile-inventory{display:none}
+}
+.notification{
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:tomato;
+  color:#fff;
+  padding:10px 20px;
+  border-radius:8px;
+  font-weight:bold;
+  z-index:1000;
+  opacity:0;
+  transition:opacity 0.3s ease;
 }
 </style>
 </head>
@@ -245,7 +265,6 @@ function renderMachines(){
  MACHINES.forEach(machine=>{
    const wrap=document.createElement("div"); wrap.className="machine"; wrap.dataset.machine=machine;
    const title=document.createElement("div"); title.className="machine-title"; title.textContent=machine;
-
    const content=document.createElement("div"); content.className="machine-content";
    const slots=document.createElement("div"); slots.className="slots";
    state.machines[machine].forEach(it=>{
@@ -255,14 +274,11 @@ function renderMachines(){
      slots.appendChild(pill);
    });
    content.appendChild(slots);
-
    const controls=document.createElement("div"); controls.className="controls";
    const bProc=document.createElement("button"); bProc.className="btn"; bProc.textContent="Обработать"; bProc.onclick=()=>processCraft(machine,slots);
    const bClear=document.createElement("button"); bClear.className="btn"; bClear.textContent="Очистить"; bClear.onclick=()=>clearMachine(machine);
    controls.append(bProc,bClear);
-
    wrap.append(title,content,controls);
-
    wrap.addEventListener("dragover", e=>{ e.preventDefault(); wrap.classList.add("dragover"); });
    wrap.addEventListener("dragleave", ()=>wrap.classList.remove("dragover"));
    wrap.addEventListener("drop", e=>{
@@ -271,7 +287,6 @@ function renderMachines(){
      const isBase = e.dataTransfer.getData("text/base")==="1";
      dropToMachine(name,isBase,machine);
    });
-
    cont.appendChild(wrap);
  });
 }
@@ -292,6 +307,18 @@ function arraysAsMultisetEqual(a,b){
  return cnt.size===0;
 }
 
+function showNotification(message){
+  const notif=document.createElement("div");
+  notif.className="notification";
+  notif.textContent=message;
+  document.body.appendChild(notif);
+  setTimeout(()=>notif.style.opacity="1",10);
+  setTimeout(()=>{
+    notif.style.opacity="0";
+    setTimeout(()=>notif.remove(),300);
+  },2000);
+}
+
 function processCraft(machine, slotsElem){
  const input=[...state.machines[machine]];
  const recipe=RECIPES.find(r=>r.machine===machine && arraysAsMultisetEqual(r.components,input));
@@ -301,6 +328,8 @@ function processCraft(machine, slotsElem){
    else state.inventory[recipe.result]=1;
    const idx=RECIPES.indexOf(recipe); state.discoveredByIdx[idx]=true;
    if(recipe.result==="труба"){ showConfetti(); setTimeout(()=>alert("Поздравляем! Вы изготовили трубу!"),50); }
+ } else {
+   showNotification("Неправильное сочетание материалов!");
  }
  state.machines[machine]=[];
  renderAll();
