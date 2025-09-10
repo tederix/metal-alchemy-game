@@ -5,105 +5,110 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
 <title>Металлургическая алхимия</title>
 <style>
-  :root{
-    --panel-bg-dark:#222;--panel-bg-light:#fff;
-    --body-dark:#151515;--body-light:#f5f5f5;
-    --text-dark:#eee;--text-light:#222;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto;
-    display:flex;flex-direction:column;align-items:center;gap:12px;
-    padding:12px;transition:background .3s,color .3s;overflow-x:hidden}
-  body.dark{background:var(--body-dark);color:var(--text-dark)}
-  body.light{background:var(--body-light);color:var(--text-light)}
-  h2{margin:0 0 8px;font-size:16px}
-  main{width:100%;max-width:1400px;display:grid;grid-template-columns:1fr;gap:12px}
-  .panel{padding:12px;border-radius:10px;transition:background .3s}
-  body.dark .panel{background:var(--panel-bg-dark)}
-  body.light .panel{background:var(--panel-bg-light)}
-  #inventory,#mobile-inventory{display:flex;gap:8px;flex-wrap:wrap;transition:all .3s ease}
-  .item,.btn{padding:8px 10px;border-radius:8px;cursor:pointer;user-select:none;
-    display:flex;align-items:center;justify-content:center;transition:all .2s ease}
-  body.dark .item,.btn{background:#3a3a3a;color:#eee}
-  body.light .item,.btn{background:#ddd;color:#222}
-  .item{cursor:grab;width:74px;text-align:center;flex-direction:column}
-  .item img{width:64px;height:64px;display:block}
-  .item span{margin-top:4px;font-size:12px;line-height:1.1}
-  .item.dragging{opacity:.85;transform:scale(1.03)}
-  .machine{border-radius:10px;padding:10px;min-width:260px;flex:1;
-    display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;min-height:220px;}
-  body.dark .machine{background:#292929}
-  body.light .machine{background:#eee}
-  .machine-title{font-weight:bold;text-align:center}
-  .slots{min-height:84px;padding:6px;border-radius:8px;display:flex;gap:6px;
-    flex-wrap:wrap;justify-content:center;position:relative}
-  body.dark .slots{background:#1f1f1f}
-  body.light .slots{background:#ddd}
-  .slot-pill{width:74px;border-radius:6px;display:flex;flex-direction:column;
-    align-items:center;padding:2px 0;opacity:0;transform:translateY(-6px);
-    transition:opacity .12s ease,transform .12s ease}
-  .slot-pill.show{opacity:1;transform:translateY(0)}
-  .slot-pill img{width:64px;height:64px}
-  .slot-pill span{font-size:12px;margin-top:2px;text-align:center}
-  .machine.dragover{outline:3px dashed rgba(136,170,255,.18)}
-  .controls{display:flex;gap:6px;width:100%;margin-top:auto}
-  .controls .btn{flex:1}
-  .flash{position:absolute;inset:0;border-radius:12px;
-    background:radial-gradient(circle at 50% 50%,rgba(255,255,160,.8),
-    rgba(255,255,0,.3) 40%,transparent 70%);animation:flashAnim .45s ease}
-  @keyframes flashAnim{0%{opacity:0;transform:scale(.6)}
-    50%{opacity:1;transform:scale(1)}
-    100%{opacity:0;transform:scale(1.2)}}
-  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
-  .confetti-piece{position:absolute;width:8px;height:8px;background:gold;
-    top:-10px;animation:fall 2.2s linear forwards}
-  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
-  .modal{position:fixed;inset:0;display:flex;align-items:center;
-    justify-content:center;z-index:20}
-  body.dark .modal{background:rgba(0,0,0,.85)}
-  body.light .modal{background:rgba(255,255,255,.85)}
-  .modal-content{background:#222;color:#eee;padding:20px;border-radius:12px;
-    max-width:520px;text-align:center;display:flex;flex-direction:column;gap:12px}
-  body.light .modal-content{background:#fff;color:#222}
-  .modal-content p{margin:6px 0 0}
-  .modal-content .btn{align-self:center}
-  #topbar{width:100%;display:flex;justify-content:flex-end;gap:6px;padding:6px}
-  #toggle-inv{position:fixed;top:10px;left:10px;z-index:12;display:none}
-  #mobile-inventory{position:fixed;top:56px;left:0;right:0;
-    background:rgba(0,0,0,.95);color:#fff;padding:10px;display:none;
-    flex-wrap:wrap;gap:8px;z-index:11;justify-content:center}
-  #recipes-panel{position:fixed;top:56px;right:10px;width:380px;max-height:88vh;
-    overflow:auto;background:rgba(0,0,0,.95);color:#fff;padding:12px;border-radius:10px;
-    display:none;flex-direction:column;gap:8px;z-index:12}
-  #recipes-panel.show{display:flex}
-  #recipes-panel h3{text-align:center;margin:0 0 6px}
-  #recipes-list .recipe{font-size:13px;line-height:1.2;
-    background:rgba(255,255,255,.06);padding:6px;border-radius:6px}
-  @media (max-width:768px){
-    main{grid-template-columns:1fr}
-    .machine{min-width:100%}
-    #inventory{display:none}
-    .panel.inventory-panel h2{display:none}
-    #mobile-inventory .item img{width:48px;height:48px}
-    #mobile-inventory .item span{font-size:10px}
-    #recipes-panel{width:min(92vw,420px)}
-  }
-  @media (min-width:769px){
-    #inventory{display:flex;width:100%;flex-wrap:wrap}
-    #mobile-inventory{display:none}
-  }
+:root{
+  --panel-bg-dark:#222;--panel-bg-light:#fff;
+  --body-dark:#151515;--body-light:#f5f5f5;
+  --text-dark:#eee;--text-light:#222;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  padding:12px;transition:background .3s,color .3s;overflow-x:hidden}
+body.dark{background:var(--body-dark);color:var(--text-dark)}
+body.light{background:var(--body-light);color:var(--text-light)}
+h2{margin:0 0 8px;font-size:16px}
+main{width:100%;max-width:1400px;display:grid;grid-template-columns:1fr;gap:12px}
+.panel{padding:12px;border-radius:10px;transition:background .3s}
+body.dark .panel{background:var(--panel-bg-dark)}
+body.light .panel{background:var(--panel-bg-light)}
+#inventory,#mobile-inventory{display:flex;gap:8px;flex-wrap:wrap;transition:all .3s ease}
+.item,.btn{padding:8px 10px;border-radius:8px;cursor:pointer;user-select:none;
+  display:flex;align-items:center;justify-content:center;transition:all .2s ease}
+body.dark .item,.btn{background:#3a3a3a;color:#eee}
+body.light .item,.btn{background:#ddd;color:#222}
+.item{cursor:grab;width:74px;text-align:center;flex-direction:column;position:relative}
+.item img{width:64px;height:64px;display:block}
+.item span{margin-top:4px;font-size:12px;line-height:1.1}
+.item.dragging{opacity:.85;transform:scale(1.03)}
+.item .count{position:absolute;top:2px;right:4px;background:rgba(0,0,0,0.6);
+  color:#fff;font-size:10px;padding:1px 4px;border-radius:6px}
+body.light .item .count{background:rgba(255,255,255,0.8);color:#222}
+.machine{border-radius:10px;padding:10px;min-width:260px;flex:1;
+  display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;min-height:220px;}
+body.dark .machine{background:#292929}
+body.light .machine{background:#eee}
+.machine-title{font-weight:bold;text-align:center}
+.slots{min-height:84px;padding:6px;border-radius:8px;display:flex;gap:6px;
+  flex-wrap:wrap;justify-content:center;position:relative}
+body.dark .slots{background:#1f1f1f}
+body.light .slots{background:#ddd}
+.slot-pill{width:74px;border-radius:6px;display:flex;flex-direction:column;
+  align-items:center;padding:2px 0;opacity:0;transform:translateY(-6px);
+  transition:opacity .12s ease,transform .12s ease}
+.slot-pill.show{opacity:1;transform:translateY(0)}
+.slot-pill img{width:64px;height:64px}
+.slot-pill span{font-size:12px;margin-top:2px;text-align:center}
+.machine.dragover{outline:3px dashed rgba(136,170,255,.18)}
+.controls{display:flex;gap:6px;width:100%;margin-top:auto}
+.controls .btn{flex:1}
+.flash{position:absolute;inset:0;border-radius:12px;
+  background:radial-gradient(circle at 50% 50%,rgba(255,255,160,.8),
+  rgba(255,255,0,.3) 40%,transparent 70%);animation:flashAnim .45s ease}
+@keyframes flashAnim{0%{opacity:0;transform:scale(.6)}
+  50%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.2)}}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.confetti-piece{position:absolute;width:8px;height:8px;background:gold;
+  top:-10px;animation:fall 2.2s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+.modal{position:fixed;inset:0;display:flex;align-items:center;
+  justify-content:center;z-index:20}
+body.dark .modal{background:rgba(0,0,0,.85)}
+body.light .modal{background:rgba(255,255,255,.85)}
+.modal-content{background:#222;color:#eee;padding:20px;border-radius:12px;
+  max-width:520px;text-align:center;display:flex;flex-direction:column;gap:12px}
+body.light .modal-content{background:#fff;color:#222}
+.modal-content p{margin:6px 0 0}
+.modal-content .btn{align-self:center}
+#toggle-inv{display:none}
+#mobile-inventory{position:fixed;top:56px;left:0;right:0;
+  background:rgba(0,0,0,.95);color:#fff;padding:10px;display:none;
+  flex-wrap:wrap;gap:8px;z-index:11;justify-content:center}
+#recipes-panel{position:fixed;top:56px;right:10px;width:380px;max-height:88vh;
+  overflow:auto;background:rgba(0,0,0,.95);color:#fff;padding:12px;border-radius:10px;
+  display:none;flex-direction:column;gap:8px;z-index:12}
+#recipes-panel.show{display:flex}
+#recipes-panel h3{text-align:center;margin:0 0 6px}
+#recipes-list .recipe{font-size:13px;line-height:1.2;
+  background:rgba(255,255,255,.06);padding:6px;border-radius:6px}
+@media (max-width:768px){
+  main{grid-template-columns:1fr}
+  .machine{min-width:100%}
+  #inventory{display:none}
+  .panel.inventory-panel h2{display:none}
+  #mobile-inventory .item img{width:48px;height:48px}
+  #mobile-inventory .item span{font-size:10px}
+  #recipes-panel{width:min(92vw,420px)}
+}
+@media (min-width:769px){
+  #inventory{display:flex;width:100%;flex-wrap:wrap}
+  #mobile-inventory{display:none}
+}
 </style>
 </head>
 <body class="dark">
 
-<div id="topbar">
-  <button class="btn" onclick="toggleTheme()">Сменить тему</button>
-  <button class="btn" onclick="toggleRecipes()">Рецепты</button>
+<div id="topbar" style="display:flex;justify-content:space-between;width:100%;padding:6px;gap:6px;">
+  <div>
+    <button class="btn" onclick="toggleTheme()">Сменить тему</button>
+  </div>
+  <div style="display:flex;gap:6px;">
+    <button class="btn" onclick="toggleRecipes()">Рецепты</button>
+    <button id="toggle-inv" class="btn">Инвентарь</button>
+  </div>
 </div>
 
-<button id="toggle-inv" class="btn">Инвентарь</button>
 <div id="mobile-inventory"></div>
-
 <div id="recipes-panel">
   <h3>Открытые рецепты</h3>
   <div id="recipes-list"></div>
@@ -134,7 +139,6 @@
 <div id="confetti" class="confetti"></div>
 
 <script>
-/* ---------- Данные ---------- */
 const BASE_ITEMS=["воздух","уголь","руда"];
 const MACHINES=[
  "коксовая батарея","установка сухого тушения кокса","воздухоразделительная установка",
@@ -167,19 +171,16 @@ const IMAGE_MAP={
  "слябы":"icons/slyaby.png","горячекатаный лист":"icons/goryachekatany_list.png",
  "холоднокатаный лист":"icons/kholodnokatany_list.png","труба":"icons/truba.png"
 };
-/* ---------- Состояние ---------- */
-const state={inventory:[],machines:{},discoveredByIdx:{}};
+const state={inventory:{},machines:{},discoveredByIdx:{}};
 MACHINES.forEach(m=>state.machines[m]=[]);
 
-/* ---------- Утилиты ---------- */
 const byId=id=>document.getElementById(id);
 function toggleTheme(){document.body.classList.toggle("dark");document.body.classList.toggle("light");}
 function toggleRecipes(){byId("recipes-panel").classList.toggle("show");}
 function isMobile(){return window.matchMedia("(max-width:768px)").matches;}
 
-/* ---------- Старт ---------- */
 function startGame(){
- state.inventory=[];
+ state.inventory={};
  byId("modal").style.display="none";
  document.querySelector("main").style.display="grid";
  const t=byId("toggle-inv");
@@ -187,72 +188,40 @@ function startGame(){
  renderAll();
 }
 
-/* ---------- Рендер инвентаря ---------- */
-function createItemElement(name,isBase,invIndex){
+function createItemElement(name,isBase){
+  const count = isBase ? "∞" : state.inventory[name];
   const el=document.createElement("div");
   el.className="item"; el.draggable=true;
-  el.dataset.base=isBase?"1":""; el.dataset.index=isBase?"-1":String(invIndex);
   const img=document.createElement("img"); img.src=IMAGE_MAP[name]||""; img.alt=name;
-  const span=document.createElement("span"); span.textContent=name;
-  el.append(img,span);
+  el.appendChild(img);
 
-  // --- Desktop drag ---
+  if(count > 1 || isBase){
+    const counter = document.createElement("div");
+    counter.className = "count";
+    counter.textContent = count;
+    el.appendChild(counter);
+  }
+
+  const span=document.createElement("span"); span.textContent=name; el.appendChild(span);
+  el.dataset.base=isBase?"1":"";
+
   el.addEventListener("dragstart",e=>{
     e.dataTransfer.setData("text/name",name);
     e.dataTransfer.setData("text/base",isBase?"1":"");
-    e.dataTransfer.setData("text/index",isBase?"-1":String(invIndex));
   });
-
-  // --- Mobile touch drag (ghost) ---
-  let ghost = null;
-  function onTouchMove(ev){
-    if(!ghost) return;
-    const t = ev.touches[0];
-    ghost.style.left = (t.pageX - 36) + "px";
-    ghost.style.top  = (t.pageY - 36) + "px";
-  }
-  function onTouchEnd(ev){
-    if(ghost){ ghost.remove(); ghost = null; }
-    document.removeEventListener("touchmove", onTouchMove);
-    document.removeEventListener("touchend", onTouchEnd);
-
-    const t = ev.changedTouches[0];
-    const dropTarget = document.elementFromPoint(t.clientX, t.clientY);
-    const machineEl = dropTarget?.closest(".machine");
-    if(machineEl){
-      const machine = machineEl.dataset.machine;
-      dropToMachine(name, isBase, invIndex, machine);
-    }
-  }
-  el.addEventListener("touchstart", ev=>{
-    if(ev.touches.length !== 1) return;
-    ev.preventDefault(); // блокируем скролл во время drag
-    ghost = el.cloneNode(true);
-    ghost.style.position = "fixed";
-    ghost.style.pointerEvents = "none";
-    ghost.style.opacity = "0.85";
-    ghost.style.zIndex = 9999;
-    ghost.style.left = (ev.touches[0].pageX - 36) + "px";
-    ghost.style.top  = (ev.touches[0].pageY - 36) + "px";
-    document.body.appendChild(ghost);
-    document.addEventListener("touchmove", onTouchMove, {passive:false});
-    document.addEventListener("touchend", onTouchEnd);
-  }, {passive:false});
-
   return el;
 }
 
 function renderInventory(){
  const inv=byId("inventory"), invMobile=byId("mobile-inventory");
  inv.innerHTML=""; invMobile.innerHTML="";
- const fullList=[...BASE_ITEMS.map(n=>({name:n,isBase:true,index:-1})), ...state.inventory.map((n,i)=>({name:n,isBase:false,index:i}))];
- fullList.forEach(({name,isBase,index})=>{
-   inv.appendChild(createItemElement(name,isBase,index));
-   invMobile.appendChild(createItemElement(name,isBase,index));
+ const fullList=[...BASE_ITEMS.map(n=>({name:n,isBase:true})), ...Object.keys(state.inventory).map(n=>({name:n,isBase:false}))];
+ fullList.forEach(({name,isBase})=>{
+   inv.appendChild(createItemElement(name,isBase));
+   invMobile.appendChild(createItemElement(name,isBase));
  });
 }
 
-/* ---------- Машины ---------- */
 function renderMachines(){
  const cont=byId("machines-container"); cont.innerHTML="";
  MACHINES.forEach(machine=>{
@@ -276,8 +245,7 @@ function renderMachines(){
      wrap.classList.remove("dragover");
      const name = e.dataTransfer.getData("text/name");
      const isBase = e.dataTransfer.getData("text/base") === "1";
-     const idx = parseInt(e.dataTransfer.getData("text/index") || "-1", 10);
-     dropToMachine(name, isBase, idx, machine);
+     dropToMachine(name, isBase, machine);
    });
 
    wrap.append(title, slots, controls);
@@ -285,86 +253,77 @@ function renderMachines(){
  });
 }
 
-function dropToMachine(name,isBase,invIndex,machine){
+function dropToMachine(name,isBase,machine){
  state.machines[machine].push(name);
- if(!isBase && invIndex >= 0 && state.inventory[invIndex] === name){
-   state.inventory.splice(invIndex,1);
+ if(!isBase){
+   if(state.inventory[name]>1){ state.inventory[name]--; }
+   else { delete state.inventory[name]; }
  }
  renderAll();
 }
 
-/* ---------- Крафт ---------- */
 function arraysAsMultisetEqual(a,b){
- if(a.length !== b.length) return false;
- const cnt = new Map(); a.forEach(x=>cnt.set(x,(cnt.get(x)||0)+1));
- for(const x of b){ const v = cnt.get(x); if(!v) return false; if(v===1) cnt.delete(x); else cnt.set(x,v-1); }
+ if(a.length!==b.length) return false;
+ const cnt=new Map(); a.forEach(x=>cnt.set(x,(cnt.get(x)||0)+1));
+ for(const x of b){ const v=cnt.get(x); if(!v) return false; if(v===1) cnt.delete(x); else cnt.set(x,v-1); }
  return cnt.size===0;
 }
+
 function processCraft(machine, slotsElem){
  const input = [...state.machines[machine]];
- const recipe = RECIPES.find(r => r.machine === machine && arraysAsMultisetEqual(r.components, input));
+ const recipe = RECIPES.find(r => r.machine===machine && arraysAsMultisetEqual(r.components,input));
  if(recipe){
    craftFlash(slotsElem);
-   state.inventory.push(recipe.result);
-   const idx = RECIPES.indexOf(recipe);
-   state.discoveredByIdx[idx] = true;
-   if(recipe.result === "труба"){ showConfetti(); setTimeout(()=>alert("Поздравляем! Вы изготовили трубу!"), 50); }
+   if(state.inventory[recipe.result]) state.inventory[recipe.result]++;
+   else state.inventory[recipe.result]=1;
+   const idx = RECIPES.indexOf(recipe); state.discoveredByIdx[idx]=true;
+   if(recipe.result==="труба"){ showConfetti(); setTimeout(()=>alert("Поздравляем! Вы изготовили трубу!"),50); }
  }
- state.machines[machine] = [];
+ state.machines[machine]=[];
  renderAll();
 }
 
-// Очистка установки: возвращаем предметы в инвентарь (кроме базовых)
 function clearMachine(machine){
   const items = state.machines[machine] || [];
   items.forEach(item=>{
     if(!BASE_ITEMS.includes(item)){
-      state.inventory.push(item);
+      if(state.inventory[item]) state.inventory[item]++;
+      else state.inventory[item]=1;
     }
   });
   state.machines[machine] = [];
   renderAll();
 }
 
-/* ---------- Эффекты ---------- */
-function craftFlash(slotsElem){ const f = document.createElement("div"); f.className="flash"; slotsElem.appendChild(f); setTimeout(()=>f.remove(),450); }
+function craftFlash(slotsElem){ const f=document.createElement("div"); f.className="flash"; slotsElem.appendChild(f); setTimeout(()=>f.remove(),450);}
 function showConfetti(){
-  const root = byId("confetti");
+  const root=byId("confetti");
   for(let i=0;i<120;i++){
-    const p = document.createElement("div"); p.className="confetti-piece";
-    p.style.left = (Math.random()*100) + "vw";
-    p.style.background = ["gold","deepskyblue","lime","tomato","violet"][Math.floor(Math.random()*5)];
-    p.style.animationDelay = (Math.random()*0.6) + "s";
+    const p=document.createElement("div"); p.className="confetti-piece";
+    p.style.left=(Math.random()*100)+"vw";
+    p.style.background=["gold","deepskyblue","lime","tomato","violet"][Math.floor(Math.random()*5)];
+    p.style.animationDelay=(Math.random()*0.6)+"s";
     root.appendChild(p);
-    setTimeout(()=>p.remove(), 2600);
+    setTimeout(()=>p.remove(),2600);
   }
 }
 
-/* ---------- Рецепты ---------- */
 function renderRecipes(){
-  const list = byId("recipes-list"); list.innerHTML = "";
+  const list = byId("recipes-list"); list.innerHTML="";
   Object.keys(state.discoveredByIdx).forEach(k=>{
     if(!state.discoveredByIdx[k]) return;
     const r = RECIPES[+k];
-    const line = document.createElement("div"); line.className = "recipe";
-    line.textContent = `${r.components.join(" + ")} → ${r.result} (в ${r.machine})`;
+    const line = document.createElement("div"); line.className="recipe";
+    line.textContent=`${r.components.join(" + ")} → ${r.result} (в ${r.machine})`;
     list.appendChild(line);
   });
 }
 
-/* ---------- Общий рендер ---------- */
 function renderAll(){ renderInventory(); renderMachines(); renderRecipes(); }
 
-/* ---------- Инвентарь mobile toggle ---------- */
-byId("toggle-inv").addEventListener("click", ()=>{ const inv = byId("mobile-inventory"); inv.style.display = inv.style.display === "flex" ? "none" : "flex"; });
-
-window.addEventListener("resize", ()=>{ const t = byId("toggle-inv"); if(isMobile()){ t.style.display = "block"; } else { t.style.display = "none"; byId("mobile-inventory").style.display = "none"; } });
-
-// Инициализация
-window.addEventListener("DOMContentLoaded", ()=>{
-  byId("toggle-inv").style.display = "none";
-  document.body.classList.add("dark");
-});
+byId("toggle-inv").addEventListener("click", ()=>{ const inv = byId("mobile-inventory"); inv.style.display=inv.style.display==="flex"?"none":"flex"; });
+window.addEventListener("resize", ()=>{ const t=byId("toggle-inv"); if(isMobile()){ t.style.display="block"; } else { t.style.display="none"; byId("mobile-inventory").style.display="none"; } });
+window.addEventListener("DOMContentLoaded", ()=>{ byId("toggle-inv").style.display="none"; document.body.classList.add("dark"); });
 </script>
 </body>
 </html>
