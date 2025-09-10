@@ -23,25 +23,49 @@ body.dark .panel{background:var(--panel-bg-dark)}
 body.light .panel{background:var(--panel-bg-light)}
 #inventory,#mobile-inventory{display:flex;gap:8px;flex-wrap:wrap;transition:all .3s ease}
 .item,.btn{padding:8px 10px;border-radius:8px;cursor:pointer;user-select:none;
-  display:flex;align-items:center;justify-content:center;transition:all .2s ease}
+  display:flex;align-items:center;justify-content:center;transition:all .2s ease;position:relative}
 body.dark .item,.btn{background:#3a3a3a;color:#eee}
 body.light .item,.btn{background:#ddd;color:#222}
-.item{cursor:grab;width:74px;text-align:center;flex-direction:column;position:relative}
+.item{cursor:grab;width:90px;text-align:center;flex-direction:column}
 .item img{width:64px;height:64px;display:block}
-.item span{margin-top:4px;font-size:12px;line-height:1.1}
+.item span{margin-top:4px;font-size:12px;line-height:1.1;word-wrap:break-word}
 .item.dragging{opacity:.85;transform:scale(1.03)}
 .item .count{position:absolute;top:2px;right:4px;background:rgba(0,0,0,0.6);
   color:#fff;font-size:10px;padding:1px 4px;border-radius:6px}
 body.light .item .count{background:rgba(255,255,255,0.8);color:#222}
-.machine{border-radius:10px;padding:10px;min-width:260px;flex:1;
-  display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;min-height:220px;}
-body.dark .machine{background:#292929}
+
+#machines-container {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:12px;
+}
+.machine {
+  border-radius:10px;
+  padding:10px;
+  min-width:260px;
+  flex:1 1 260px;
+  display:flex;
+  flex-direction:column;
+  min-height:220px;
+  background:#292929;
+  position:relative;
+}
 body.light .machine{background:#eee}
-.machine-title{font-weight:bold;text-align:center}
-.slots{min-height:84px;padding:6px;border-radius:8px;display:flex;gap:6px;
-  flex-wrap:wrap;justify-content:center;position:relative}
-body.dark .slots{background:#1f1f1f}
-body.light .slots{background:#ddd}
+.machine-title{font-weight:bold;text-align:center;margin-bottom:6px}
+.machine-content{flex:1;display:flex;justify-content:center;align-items:center;width:100%}
+.slots {
+  width:80%;
+  min-height:100px;
+  border-radius:8px;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:center;
+}
+body.dark .slots { background:#1f1f1f; }
+body.light .slots { background:#ddd; }
 .slot-pill{width:74px;border-radius:6px;display:flex;flex-direction:column;
   align-items:center;padding:2px 0;opacity:0;transform:translateY(-6px);
   transition:opacity .12s ease,transform .12s ease}
@@ -49,7 +73,7 @@ body.light .slots{background:#ddd}
 .slot-pill img{width:64px;height:64px}
 .slot-pill span{font-size:12px;margin-top:2px;text-align:center}
 .machine.dragover{outline:3px dashed rgba(136,170,255,.18)}
-.controls{display:flex;gap:6px;width:100%;margin-top:auto}
+.controls{display:flex;gap:6px;width:100%;margin-top:6px}
 .controls .btn{flex:1}
 .flash{position:absolute;inset:0;border-radius:12px;
   background:radial-gradient(circle at 50% 50%,rgba(255,255,160,.8),
@@ -132,7 +156,7 @@ body.light .modal-content{background:#fff;color:#222}
 
   <section class="panel" style="grid-column:1 / -1">
     <h2>Установки</h2>
-    <div id="machines-container" style="display:flex;flex-wrap:wrap;gap:12px"></div>
+    <div id="machines-container"></div>
   </section>
 </main>
 
@@ -194,17 +218,11 @@ function createItemElement(name,isBase){
   el.className="item"; el.draggable=true;
   const img=document.createElement("img"); img.src=IMAGE_MAP[name]||""; img.alt=name;
   el.appendChild(img);
-
   if(count > 1 || isBase){
-    const counter = document.createElement("div");
-    counter.className = "count";
-    counter.textContent = count;
-    el.appendChild(counter);
+    const counter = document.createElement("div"); counter.className = "count"; counter.textContent = count; el.appendChild(counter);
   }
-
   const span=document.createElement("span"); span.textContent=name; el.appendChild(span);
   el.dataset.base=isBase?"1":"";
-
   el.addEventListener("dragstart",e=>{
     e.dataTransfer.setData("text/name",name);
     e.dataTransfer.setData("text/base",isBase?"1":"");
@@ -227,6 +245,8 @@ function renderMachines(){
  MACHINES.forEach(machine=>{
    const wrap=document.createElement("div"); wrap.className="machine"; wrap.dataset.machine=machine;
    const title=document.createElement("div"); title.className="machine-title"; title.textContent=machine;
+
+   const content=document.createElement("div"); content.className="machine-content";
    const slots=document.createElement("div"); slots.className="slots";
    state.machines[machine].forEach(it=>{
      const pill=document.createElement("div"); pill.className="slot-pill show";
@@ -234,21 +254,24 @@ function renderMachines(){
      const cap=document.createElement("span"); cap.textContent=it; pill.append(img,cap);
      slots.appendChild(pill);
    });
+   content.appendChild(slots);
+
    const controls=document.createElement("div"); controls.className="controls";
    const bProc=document.createElement("button"); bProc.className="btn"; bProc.textContent="Обработать"; bProc.onclick=()=>processCraft(machine,slots);
    const bClear=document.createElement("button"); bClear.className="btn"; bClear.textContent="Очистить"; bClear.onclick=()=>clearMachine(machine);
    controls.append(bProc,bClear);
+
+   wrap.append(title,content,controls);
 
    wrap.addEventListener("dragover", e=>{ e.preventDefault(); wrap.classList.add("dragover"); });
    wrap.addEventListener("dragleave", ()=>wrap.classList.remove("dragover"));
    wrap.addEventListener("drop", e=>{
      wrap.classList.remove("dragover");
      const name = e.dataTransfer.getData("text/name");
-     const isBase = e.dataTransfer.getData("text/base") === "1";
-     dropToMachine(name, isBase, machine);
+     const isBase = e.dataTransfer.getData("text/base")==="1";
+     dropToMachine(name,isBase,machine);
    });
 
-   wrap.append(title, slots, controls);
    cont.appendChild(wrap);
  });
 }
@@ -270,13 +293,13 @@ function arraysAsMultisetEqual(a,b){
 }
 
 function processCraft(machine, slotsElem){
- const input = [...state.machines[machine]];
- const recipe = RECIPES.find(r => r.machine===machine && arraysAsMultisetEqual(r.components,input));
+ const input=[...state.machines[machine]];
+ const recipe=RECIPES.find(r=>r.machine===machine && arraysAsMultisetEqual(r.components,input));
  if(recipe){
    craftFlash(slotsElem);
    if(state.inventory[recipe.result]) state.inventory[recipe.result]++;
    else state.inventory[recipe.result]=1;
-   const idx = RECIPES.indexOf(recipe); state.discoveredByIdx[idx]=true;
+   const idx=RECIPES.indexOf(recipe); state.discoveredByIdx[idx]=true;
    if(recipe.result==="труба"){ showConfetti(); setTimeout(()=>alert("Поздравляем! Вы изготовили трубу!"),50); }
  }
  state.machines[machine]=[];
@@ -284,14 +307,14 @@ function processCraft(machine, slotsElem){
 }
 
 function clearMachine(machine){
-  const items = state.machines[machine] || [];
+  const items=state.machines[machine]||[];
   items.forEach(item=>{
     if(!BASE_ITEMS.includes(item)){
       if(state.inventory[item]) state.inventory[item]++;
       else state.inventory[item]=1;
     }
   });
-  state.machines[machine] = [];
+  state.machines[machine]=[];
   renderAll();
 }
 
