@@ -29,9 +29,9 @@
   .item{cursor:grab;width:74px;text-align:center;flex-direction:column}
   .item img{width:64px;height:64px;display:block}
   .item span{margin-top:4px;font-size:12px;line-height:1.1}
-  .item.dragging{opacity:.85;scale:1.05}
+  .item.dragging{opacity:.85;transform:scale(1.03)}
   .machine{border-radius:10px;padding:10px;min-width:260px;flex:1;
-    display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+    display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;min-height:220px;}
   body.dark .machine{background:#292929}
   body.light .machine{background:#eee}
   .machine-title{font-weight:bold;text-align:center}
@@ -44,9 +44,9 @@
     transition:opacity .12s ease,transform .12s ease}
   .slot-pill.show{opacity:1;transform:translateY(0)}
   .slot-pill img{width:64px;height:64px}
-  .slot-pill span{font-size:12px;margin-top:2px}
+  .slot-pill span{font-size:12px;margin-top:2px;text-align:center}
   .machine.dragover{outline:3px dashed rgba(136,170,255,.18)}
-  .controls{display:flex;gap:6px;width:100%}
+  .controls{display:flex;gap:6px;width:100%;margin-top:auto}
   .controls .btn{flex:1}
   .flash{position:absolute;inset:0;border-radius:12px;
     background:radial-gradient(circle at 50% 50%,rgba(255,255,160,.8),
@@ -189,24 +189,63 @@ function startGame(){
 
 /* ---------- Рендер инвентаря ---------- */
 function createItemElement(name,isBase,invIndex){
- const el=document.createElement("div");
- el.className="item";el.draggable=true;
- el.dataset.base=isBase?"1":"";el.dataset.index=isBase?"-1":String(invIndex);
- const img=document.createElement("img");img.src=IMAGE_MAP[name]||"";img.alt=name;
- const span=document.createElement("span");span.textContent=name;
- el.append(img,span);
- el.addEventListener("dragstart",e=>{
-   e.dataTransfer.setData("text/name",name);
-   e.dataTransfer.setData("text/base",isBase?"1":"");
-   e.dataTransfer.setData("text/index",isBase?"-1":String(invIndex));
- });
- // touch переноса опущен для краткости (аналогично прошлому)
- return el;
+  const el=document.createElement("div");
+  el.className="item"; el.draggable=true;
+  el.dataset.base=isBase?"1":""; el.dataset.index=isBase?"-1":String(invIndex);
+  const img=document.createElement("img"); img.src=IMAGE_MAP[name]||""; img.alt=name;
+  const span=document.createElement("span"); span.textContent=name;
+  el.append(img,span);
+
+  // --- Desktop drag ---
+  el.addEventListener("dragstart",e=>{
+    e.dataTransfer.setData("text/name",name);
+    e.dataTransfer.setData("text/base",isBase?"1":"");
+    e.dataTransfer.setData("text/index",isBase?"-1":String(invIndex));
+  });
+
+  // --- Mobile touch drag (ghost) ---
+  let ghost = null;
+  function onTouchMove(ev){
+    if(!ghost) return;
+    const t = ev.touches[0];
+    ghost.style.left = (t.pageX - 36) + "px";
+    ghost.style.top  = (t.pageY - 36) + "px";
+  }
+  function onTouchEnd(ev){
+    if(ghost){ ghost.remove(); ghost = null; }
+    document.removeEventListener("touchmove", onTouchMove);
+    document.removeEventListener("touchend", onTouchEnd);
+
+    const t = ev.changedTouches[0];
+    const dropTarget = document.elementFromPoint(t.clientX, t.clientY);
+    const machineEl = dropTarget?.closest(".machine");
+    if(machineEl){
+      const machine = machineEl.dataset.machine;
+      dropToMachine(name, isBase, invIndex, machine);
+    }
+  }
+  el.addEventListener("touchstart", ev=>{
+    if(ev.touches.length !== 1) return;
+    ev.preventDefault(); // блокируем скролл во время drag
+    ghost = el.cloneNode(true);
+    ghost.style.position = "fixed";
+    ghost.style.pointerEvents = "none";
+    ghost.style.opacity = "0.85";
+    ghost.style.zIndex = 9999;
+    ghost.style.left = (ev.touches[0].pageX - 36) + "px";
+    ghost.style.top  = (ev.touches[0].pageY - 36) + "px";
+    document.body.appendChild(ghost);
+    document.addEventListener("touchmove", onTouchMove, {passive:false});
+    document.addEventListener("touchend", onTouchEnd);
+  }, {passive:false});
+
+  return el;
 }
+
 function renderInventory(){
- const inv=byId("inventory"),invMobile=byId("mobile-inventory");
- inv.innerHTML="";invMobile.innerHTML="";
- const fullList=[...BASE_ITEMS.map(n=>({name:n,isBase:true,index:-1})),...state.inventory.map((n,i)=>({name:n,isBase:false,index:i}))];
+ const inv=byId("inventory"), invMobile=byId("mobile-inventory");
+ inv.innerHTML=""; invMobile.innerHTML="";
+ const fullList=[...BASE_ITEMS.map(n=>({name:n,isBase:true,index:-1})), ...state.inventory.map((n,i)=>({name:n,isBase:false,index:i}))];
  fullList.forEach(({name,isBase,index})=>{
    inv.appendChild(createItemElement(name,isBase,index));
    invMobile.appendChild(createItemElement(name,isBase,index));
@@ -215,72 +254,117 @@ function renderInventory(){
 
 /* ---------- Машины ---------- */
 function renderMachines(){
- const cont=byId("machines-container");cont.innerHTML="";
+ const cont=byId("machines-container"); cont.innerHTML="";
  MACHINES.forEach(machine=>{
-   const wrap=document.createElement("div");
-   wrap.className="machine";wrap.dataset.machine=machine;
-   const title=document.createElement("div");title.className="machine-title";title.textContent=machine;
-   const slots=document.createElement("div");slots.className="slots";
+   const wrap=document.createElement("div"); wrap.className="machine"; wrap.dataset.machine=machine;
+   const title=document.createElement("div"); title.className="machine-title"; title.textContent=machine;
+   const slots=document.createElement("div"); slots.className="slots";
    state.machines[machine].forEach(it=>{
-     const pill=document.createElement("div");pill.className="slot-pill show";
-     const img=document.createElement("img");img.src=IMAGE_MAP[it]||"";img.alt=it;
-     const cap=document.createElement("span");cap.textContent=it;pill.append(img,cap);
+     const pill=document.createElement("div"); pill.className="slot-pill show";
+     const img=document.createElement("img"); img.src=IMAGE_MAP[it]||""; img.alt=it;
+     const cap=document.createElement("span"); cap.textContent=it; pill.append(img,cap);
      slots.appendChild(pill);
    });
-   const controls=document.createElement("div");controls.className="controls";
-   const bProc=document.createElement("button");bProc.className="btn";bProc.textContent="Обработать";bProc.onclick=()=>processCraft(machine,slots);
-   const bClear=document.createElement("button");bClear.className="btn";bClear.textContent="Очистить";bClear.onclick=()=>clearMachine(machine);
+   const controls=document.createElement("div"); controls.className="controls";
+   const bProc=document.createElement("button"); bProc.className="btn"; bProc.textContent="Обработать"; bProc.onclick=()=>processCraft(machine,slots);
+   const bClear=document.createElement("button"); bClear.className="btn"; bClear.textContent="Очистить"; bClear.onclick=()=>clearMachine(machine);
    controls.append(bProc,bClear);
-   wrap.addEventListener("dragover",e=>{e.preventDefault();wrap.classList.add("dragover");});
-   wrap.addEventListener("dragleave",()=>wrap.classList.remove("dragover"));
-   wrap.addEventListener("drop",e=>{
+
+   wrap.addEventListener("dragover", e=>{ e.preventDefault(); wrap.classList.add("dragover"); });
+   wrap.addEventListener("dragleave", ()=>wrap.classList.remove("dragover"));
+   wrap.addEventListener("drop", e=>{
      wrap.classList.remove("dragover");
-     const name=e.dataTransfer.getData("text/name");
-     const isBase=e.dataTransfer.getData("text/base")==="1";
-     const idx=parseInt(e.dataTransfer.getData("text/index")||"-1",10);
-     dropToMachine(name,isBase,idx,machine);
+     const name = e.dataTransfer.getData("text/name");
+     const isBase = e.dataTransfer.getData("text/base") === "1";
+     const idx = parseInt(e.dataTransfer.getData("text/index") || "-1", 10);
+     dropToMachine(name, isBase, idx, machine);
    });
-   wrap.append(title,slots,controls);cont.appendChild(wrap);
+
+   wrap.append(title, slots, controls);
+   cont.appendChild(wrap);
  });
 }
+
 function dropToMachine(name,isBase,invIndex,machine){
  state.machines[machine].push(name);
- if(!isBase&&invIndex>=0&&state.inventory[invIndex]===name){state.inventory.splice(invIndex,1);}
+ if(!isBase && invIndex >= 0 && state.inventory[invIndex] === name){
+   state.inventory.splice(invIndex,1);
+ }
  renderAll();
 }
 
 /* ---------- Крафт ---------- */
 function arraysAsMultisetEqual(a,b){
- if(a.length!==b.length) return false;
- const cnt=new Map();a.forEach(x=>cnt.set(x,(cnt.get(x)||0)+1));
- for(const x of b){const v=cnt.get(x);if(!v)return false;if(v===1)cnt.delete(x);else cnt.set(x,v-1);}
+ if(a.length !== b.length) return false;
+ const cnt = new Map(); a.forEach(x=>cnt.set(x,(cnt.get(x)||0)+1));
+ for(const x of b){ const v = cnt.get(x); if(!v) return false; if(v===1) cnt.delete(x); else cnt.set(x,v-1); }
  return cnt.size===0;
 }
-function processCraft(machine,slotsElem){
- const input=[...state.machines[machine]];
- const recipe=RECIPES.find(r=>r.machine===machine&&arraysAsMultisetEqual(r.components,input));
- if(recipe){craftFlash(slotsElem);state.inventory.push(recipe.result);
-   const idx=RECIPES.indexOf(recipe);state.discoveredByIdx[idx]=true;
-   if(recipe.result==="труба"){showConfetti();setTimeout(()=>alert("Поздравляем! Вы изготовили трубу!"),50);}
+function processCraft(machine, slotsElem){
+ const input = [...state.machines[machine]];
+ const recipe = RECIPES.find(r => r.machine === machine && arraysAsMultisetEqual(r.components, input));
+ if(recipe){
+   craftFlash(slotsElem);
+   state.inventory.push(recipe.result);
+   const idx = RECIPES.indexOf(recipe);
+   state.discoveredByIdx[idx] = true;
+   if(recipe.result === "труба"){ showConfetti(); setTimeout(()=>alert("Поздравляем! Вы изготовили трубу!"), 50); }
  }
- state.machines[machine]=[];renderAll();
+ state.machines[machine] = [];
+ renderAll();
 }
-function clearMachine(machine){state.machines[machine]=[];renderAll();}
+
+// Очистка установки: возвращаем предметы в инвентарь (кроме базовых)
+function clearMachine(machine){
+  const items = state.machines[machine] || [];
+  items.forEach(item=>{
+    if(!BASE_ITEMS.includes(item)){
+      state.inventory.push(item);
+    }
+  });
+  state.machines[machine] = [];
+  renderAll();
+}
 
 /* ---------- Эффекты ---------- */
-function craftFlash(slotsElem){const f=document.createElement("div");f.className="flash";slotsElem.appendChild(f);setTimeout(()=>f.remove(),450);}
-function showConfetti(){const root=byId("confetti");for(let i=0;i<120;i++){const p=document.createElement("div");p.className="confetti-piece";p.style.left=(Math.random()*100)+"vw";p.style.background=["gold","deepskyblue","lime","tomato","violet"][Math.floor(Math.random()*5)];p.style.animationDelay=(Math.random()*0.6)+"s";p.style.transform=`translateY(0) rotate(${Math.random()*360}deg)`;root.appendChild(p);setTimeout(()=>p.remove(),2600);}}
+function craftFlash(slotsElem){ const f = document.createElement("div"); f.className="flash"; slotsElem.appendChild(f); setTimeout(()=>f.remove(),450); }
+function showConfetti(){
+  const root = byId("confetti");
+  for(let i=0;i<120;i++){
+    const p = document.createElement("div"); p.className="confetti-piece";
+    p.style.left = (Math.random()*100) + "vw";
+    p.style.background = ["gold","deepskyblue","lime","tomato","violet"][Math.floor(Math.random()*5)];
+    p.style.animationDelay = (Math.random()*0.6) + "s";
+    root.appendChild(p);
+    setTimeout(()=>p.remove(), 2600);
+  }
+}
 
 /* ---------- Рецепты ---------- */
-function renderRecipes(){const list=byId("recipes-list");list.innerHTML="";Object.keys(state.discoveredByIdx).forEach(k=>{if(!state.discoveredByIdx[k])return;const r=RECIPES[+k];const line=document.createElement("div");line.className="recipe";line.textContent=`${r.components.join(" + ")} → ${r.result} (в ${r.machine})`;list.appendChild(line);});}
+function renderRecipes(){
+  const list = byId("recipes-list"); list.innerHTML = "";
+  Object.keys(state.discoveredByIdx).forEach(k=>{
+    if(!state.discoveredByIdx[k]) return;
+    const r = RECIPES[+k];
+    const line = document.createElement("div"); line.className = "recipe";
+    line.textContent = `${r.components.join(" + ")} → ${r.result} (в ${r.machine})`;
+    list.appendChild(line);
+  });
+}
 
 /* ---------- Общий рендер ---------- */
-function renderAll(){renderInventory();renderMachines();renderRecipes();}
+function renderAll(){ renderInventory(); renderMachines(); renderRecipes(); }
 
 /* ---------- Инвентарь mobile toggle ---------- */
-byId("toggle-inv").addEventListener("click",()=>{const inv=byId("mobile-inventory");inv.style.display=inv.style.display==="flex"?"none":"flex";});
+byId("toggle-inv").addEventListener("click", ()=>{ const inv = byId("mobile-inventory"); inv.style.display = inv.style.display === "flex" ? "none" : "flex"; });
 
-window.addEventListener("resize",()=>{const t=byId("toggle-inv");if(isMobile()){t.style.display="block";}else{t.style.display="none";byId("mobile-inventory").style.display="none";}});
+window.addEventListener("resize", ()=>{ const t = byId("toggle-inv"); if(isMobile()){ t.style.display = "block"; } else { t.style.display = "none"; byId("mobile-inventory").style.display = "none"; } });
+
+// Инициализация
+window.addEventListener("DOMContentLoaded", ()=>{
+  byId("toggle-inv").style.display = "none";
+  document.body.classList.add("dark");
+});
 </script>
 </body>
 </html>
